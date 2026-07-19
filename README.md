@@ -11,6 +11,7 @@
 [![pnpm 10](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Follow on TikTok](https://img.shields.io/badge/TikTok-%40ty.prompts.ai-ff0050?logo=tiktok&logoColor=white)](https://www.tiktok.com/@ty.prompts.ai)
 
 </div>
 
@@ -23,6 +24,10 @@ your freshest tools, review the drafts in a Next.js dashboard, then push the dec
 to your TikTok drafts or export a ready-to-post bundle. It runs with zero API keys
 in a keyless local mode, so you can drive the whole pipeline end to end before you
 wire up a model.
+
+This project is built in public by [@ty.prompts.ai](https://www.tiktok.com/@ty.prompts.ai):
+the same pipeline runs that TikTok account every day. Follow along to see it in
+production and to catch the AI tools and repos featured on the account.
 
 ## See it in action
 
@@ -206,6 +211,12 @@ push needs no extra services. Fully automated multi-platform publishing is optio
 and layers Postiz and n8n on top when you want it. See
 [docs/deployment.md](docs/deployment.md).
 
+**Who runs this in production?**
+The creator behind [@ty.prompts.ai](https://www.tiktok.com/@ty.prompts.ai), an AI
+tools account on TikTok. Every carousel posted there goes through this exact
+pipeline, so following the account is the fastest way to see what the dashboard
+produces in the wild.
+
 ## Architecture
 
 A pnpm plus Turbo monorepo: one Next.js 15 app (`apps/control-plane`) is the
@@ -257,6 +268,21 @@ Stated honestly, so there are no surprises:
 Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and keep
 the safety gate intact: do not add anything that publishes, sends, deletes, or
 spends without a human approval step.
+
+## Follow the project
+
+This dashboard is the engine behind [@ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai),
+where every carousel you see was composed, rendered, and approved right here.
+Following the account is the best way to support the project, see the pipeline
+in production, and catch new AI tools and repos as they are featured:
+
+<div align="center">
+
+**[Follow @ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai)**
+
+</div>
+
+Questions and ideas: [GitHub Discussions](https://github.com/Tytandoteth/content-management-dashboard/discussions).
 
 ## License
 

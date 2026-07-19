@@ -20,4 +20,4 @@ New here? Start with [SETUP.md](SETUP.md), then skim [ARCHITECTURE.md](ARCHITECT
 
 ---
 
-[Project README](../README.md)
+[Project README](../README.md) · [Follow @ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai)

@@ -67,4 +67,4 @@ path.
 
 ---
 
-[Docs index](README.md) · [Project README](../README.md)
+[Docs index](README.md) · [Project README](../README.md) · [Follow @ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai)

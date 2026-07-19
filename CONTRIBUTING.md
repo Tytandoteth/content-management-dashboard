@@ -70,3 +70,9 @@ you changed. For behavior that spans the running app, extend the smoke tests in
 Keep PRs focused and describe what changed and why. Note any new environment
 variable in `.env.example`. If you touch the pipeline, mention how you verified
 it (the smoke tests are the easiest proof).
+
+## Support the project
+
+The fastest way to support this project is to star the repo and follow
+[@ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai), where the
+dashboard runs in production every day.

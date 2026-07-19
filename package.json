@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "description": "Open-source content management dashboard with AI carousel generation",
+  "author": {
+    "name": "Ty Blackard",
+    "url": "https://www.tiktok.com/@ty.prompts.ai"
+  },
   "packageManager": "pnpm@10.32.1",
   "engines": {
     "node": ">=20"

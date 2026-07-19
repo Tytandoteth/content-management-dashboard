@@ -67,4 +67,4 @@ The banner title and tagline can be overridden with `BANNER_TITLE` and
 
 ---
 
-[Docs index](README.md) · [Project README](../README.md)
+[Docs index](README.md) · [Project README](../README.md) · [Follow @ty.prompts.ai on TikTok](https://www.tiktok.com/@ty.prompts.ai)
