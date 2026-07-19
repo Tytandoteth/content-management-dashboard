@@ -19,6 +19,16 @@ Every style renders the same `Slide` data and works in both formats
 card) is rendered by the three starter styles; `editorial` ignores it. Style is
 a render-time concern only, the copy model is identical across styles.
 
+## Extending
+
+These four styles are just the templates registered by default. The style
+system is pluggable: write your own with `defineCarouselTemplate()` against
+`@cmd/carousel-render/template-api`, or install a purchased pack into
+`templates/` and run `pnpm templates:sync`. Full authoring guide (the
+`CarouselTemplate` contract, the `h()` vnode rules, `SlideContext`/`Slide`
+fields, safe zones, fonts, and brand tokens) is in
+[`../../docs/templates.md`](../../docs/templates.md).
+
 ## Rendering a full deck from JSON
 `apps/control-plane/scripts/render-carousel.mts` renders a deck file to images.
 Run it through the root `tsx` wrapper (loads the root `.env` and runs inside

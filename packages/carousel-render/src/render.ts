@@ -3,7 +3,8 @@ import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 import { CAROUSEL_FORMATS, logoUrlForTool, logoDomainFor } from "@cmd/brand";
 import { loadBrandFonts } from "./fonts.js";
-import { slideElement, type SlideContext } from "./templates.js";
+import { slideElement } from "./registry.js";
+import type { SlideContext } from "./templates.js";
 import type { CarouselSpec, RenderOptions, RenderedSlide } from "./types.js";
 
 /**

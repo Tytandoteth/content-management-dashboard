@@ -1,8 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "./Icon";
+
+/** A style option in the picker — mirrors the registry's `{id, label, premium?}` shape. */
+type StyleOption = { id: string; label: string; premium?: boolean };
+
+/** The four builtins, seeded synchronously so the picker paints instantly (no fetch flash). */
+const BUILTIN_STYLES: StyleOption[] = [
+  { id: "editorial", label: "Editorial" },
+  { id: "gradient-pop", label: "Gradient Pop" },
+  { id: "paper-light", label: "Paper Light" },
+  { id: "terminal-dev", label: "Terminal Dev" },
+];
+
+/** URL of an optional premium template store; unset hides the "More styles" link. */
+const TEMPLATES_STORE_URL = process.env.NEXT_PUBLIC_TEMPLATES_STORE_URL;
 
 /**
  * Quick-create: type a topic → Claude writes the slides, Satori renders branded
@@ -13,9 +27,25 @@ export function NewCarousel({ onCreated }: { onCreated?: () => void }) {
   const router = useRouter();
   const [topic, setTopic] = useState("");
   const [count, setCount] = useState(5);
-  const [style, setStyle] = useState<"editorial" | "gradient-pop" | "paper-light" | "terminal-dev">("editorial");
+  const [style, setStyle] = useState<string>("editorial");
+  const [styles, setStyles] = useState<StyleOption[]>(BUILTIN_STYLES);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/templates")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`fetch failed (${res.status})`))))
+      .then((d: { templates?: StyleOption[] }) => {
+        if (!cancelled && Array.isArray(d.templates) && d.templates.length) setStyles(d.templates);
+      })
+      .catch(() => {
+        // Silent: keep the seeded builtins on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const submit = async () => {
     const prompt = topic.trim();
@@ -90,16 +120,28 @@ export function NewCarousel({ onCreated }: { onCreated?: () => void }) {
         style
         <select
           value={style}
-          onChange={(e) => setStyle(e.target.value as typeof style)}
+          onChange={(e) => setStyle(e.target.value)}
           disabled={busy}
           style={{ ...sel, cursor: "pointer" }}
         >
-          <option value="editorial">Editorial</option>
-          <option value="gradient-pop">Gradient Pop</option>
-          <option value="paper-light">Paper Light</option>
-          <option value="terminal-dev">Terminal Dev</option>
+          {styles.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+              {s.premium ? " ★" : ""}
+            </option>
+          ))}
         </select>
       </label>
+      {TEMPLATES_STORE_URL && (
+        <a
+          href={TEMPLATES_STORE_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{ fontSize: "var(--t-sm)", color: "var(--muted)", textDecoration: "none" }}
+        >
+          More styles »
+        </a>
+      )}
       <button
         onClick={submit}
         disabled={busy || !topic.trim()}

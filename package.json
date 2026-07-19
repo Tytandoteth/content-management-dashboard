@@ -27,7 +27,8 @@
     "db:down": "docker compose -f infra/dev/docker-compose.yml down",
     "db:backup": "bash infra/dev/backup-db.sh",
     "db:restore": "bash infra/dev/restore-db.sh",
-    "tsx": "dotenv -e .env -- pnpm --filter @cmd/control-plane exec tsx"
+    "tsx": "dotenv -e .env -- pnpm --filter @cmd/control-plane exec tsx",
+    "templates:sync": "pnpm --filter @cmd/carousel-render templates:sync"
   },
   "devDependencies": {
     "dotenv-cli": "^10.0.0",

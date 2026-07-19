@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { CONTENT_TYPES, BRAND_SURFACES, DEFAULT_BRAND_SURFACE } from "@cmd/contracts";
 import { NoGeneratorAvailableError } from "@cmd/generation";
-import { CAROUSEL_STYLES } from "@cmd/carousel-render";
+import { listCarouselTemplates } from "@cmd/carousel-render";
 import { runGeneration } from "@/lib/generation-service";
 import { drainOutbox } from "@/lib/outbox";
 
@@ -38,8 +38,20 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  // Carousel visual style (optional). Validate against the known styles.
-  const style = typeof body.style === "string" && CAROUSEL_STYLES.includes(body.style as never) ? body.style : undefined;
+  // Carousel visual style (optional). Absent/empty keeps the default (undefined,
+  // resolved by the renderer to "editorial"); a non-empty id must match a
+  // registered template (builtin or installed pack).
+  let style: string | undefined;
+  if (typeof body.style === "string" && body.style.trim()) {
+    const validStyles = listCarouselTemplates().map((t) => t.id);
+    if (!validStyles.includes(body.style)) {
+      return NextResponse.json(
+        { error: `unknown style "${body.style}"`, validStyles },
+        { status: 400 },
+      );
+    }
+    style = body.style;
+  }
 
   try {
     const outcome = await runGeneration({

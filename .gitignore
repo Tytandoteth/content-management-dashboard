@@ -33,3 +33,7 @@ output/
 
 # local DB backups (backup-db.sh)
 infra/dev/backups/
+
+# installed template packs (never commit purchased packs)
+packages/carousel-render/templates/*
+!packages/carousel-render/templates/README.md

@@ -6,9 +6,6 @@ import {
 } from "@cmd/brand";
 import type { CarouselStyle, Slide } from "./types.js";
 import { LOGO_MARK_DATA_URI } from "./logo-asset.js";
-import { hookGradientPop, bodyGradientPop, ctaGradientPop } from "./templates.gradientpop.js";
-import { hookPaperLight, bodyPaperLight, ctaPaperLight } from "./templates.paperlight.js";
-import { hookTerminalDev, bodyTerminalDev, ctaTerminalDev } from "./templates.terminaldev.js";
 
 /**
  * Slide templates rendered with Satori. We emit Satori's plain-object vnode
@@ -285,8 +282,12 @@ function coverTheme(slide: Slide, ctx: SlideContext): CoverTheme {
   };
 }
 
+/**
+ * The "editorial" builtin trio (hook/body/cta). Wrapped into a CarouselTemplate
+ * in templates.builtin.ts and registered as the default + fallback style.
+ */
 /** Cover = thumbnail: giant payoff stat + punchy hook, no body (legible at grid size). */
-function hookSlide(slide: Slide, ctx: SlideContext): VNode {
+export function hookSlide(slide: Slide, ctx: SlideContext): VNode {
   const theme = coverTheme(slide, ctx);
   const block: VNode[] = [];
 
@@ -345,7 +346,7 @@ function hookSlide(slide: Slide, ctx: SlideContext): VNode {
   ]);
 }
 
-function bodySlide(slide: Slide, ctx: SlideContext): VNode {
+export function bodySlide(slide: Slide, ctx: SlideContext): VNode {
   const block: VNode[] = [];
   // Badge: the tool's logo (social proof) when we have one, else the step number.
   block.push(
@@ -420,7 +421,7 @@ function bodySlide(slide: Slide, ctx: SlideContext): VNode {
   ]);
 }
 
-function ctaSlide(slide: Slide, ctx: SlideContext): VNode {
+export function ctaSlide(slide: Slide, ctx: SlideContext): VNode {
   const vivid = !ctx.backgroundDataUri;
   const block: VNode[] = [];
   if (slide.kicker) block.push(kicker(slide.kicker, C.text));
@@ -497,32 +498,6 @@ export function clean(s?: string): string | undefined {
   return out;
 }
 
-export function slideElement(slide: Slide, ctx: SlideContext): VNode {
-  const s: Slide = {
-    ...slide,
-    headline: clean(slide.headline) || slide.headline,
-    body: clean(slide.body),
-    kicker: clean(slide.kicker),
-    coverStat: clean(slide.coverStat),
-  };
-  // Style switch: the three starter looks, else the original "editorial" style.
-  // Text is already sanitized above for all of them.
-  if (ctx.style === "gradient-pop") {
-    if (s.role === "hook") return hookGradientPop(s, ctx);
-    if (s.role === "cta") return ctaGradientPop(s, ctx);
-    return bodyGradientPop(s, ctx);
-  }
-  if (ctx.style === "paper-light") {
-    if (s.role === "hook") return hookPaperLight(s, ctx);
-    if (s.role === "cta") return ctaPaperLight(s, ctx);
-    return bodyPaperLight(s, ctx);
-  }
-  if (ctx.style === "terminal-dev") {
-    if (s.role === "hook") return hookTerminalDev(s, ctx);
-    if (s.role === "cta") return ctaTerminalDev(s, ctx);
-    return bodyTerminalDev(s, ctx);
-  }
-  if (s.role === "hook") return hookSlide(s, ctx);
-  if (s.role === "cta") return ctaSlide(s, ctx);
-  return bodySlide(s, ctx);
-}
+// `slideElement` (style dispatch) now lives in registry.ts, which resolves the
+// deck's `style` against the template registry and dispatches by slide role. The
+// editorial trio above is registered as the default/fallback template.

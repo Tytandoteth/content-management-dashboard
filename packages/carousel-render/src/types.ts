@@ -8,8 +8,17 @@
 export type SlideRole = "hook" | "body" | "cta";
 
 /**
- * Visual style for a whole deck. Four starter looks, all rendered from the same
- * `Slide` data:
+ * Visual style for a whole deck — the id of a registered `CarouselTemplate`.
+ * Now an open string type: the four builtins ship in the box, but any installed
+ * template pack can register a new id, so the style is no longer a closed union.
+ * All styles render from the same `Slide` data; style is a render-time concern
+ * only — the composer/copy model is identical across styles. Validate/enumerate
+ * the available ids at runtime via `listCarouselTemplates()`, not this type.
+ */
+export type CarouselStyle = string;
+
+/**
+ * The four looks that ship builtin, all rendered from the same `Slide` data:
  *  - "editorial" — the original cream/orange look (Sora + Inter). The default.
  *  - "gradient-pop" — a vivid diagonal-gradient poster look: huge white Sora
  *    headlines, a chunky kicker pill, an oversized ghost index numeral, and a
@@ -19,13 +28,21 @@ export type SlideRole = "hook" | "body" | "cta";
  *  - "terminal-dev" — a dark IDE/terminal look: every slide framed as a terminal
  *    window (chrome dots + title bar), `$` prompt/output lines in JetBrains Mono,
  *    and a CLI-style repo summary card.
- * Style is a render-time concern only — the composer/copy model is identical
- * across styles.
  */
-export type CarouselStyle = "editorial" | "gradient-pop" | "paper-light" | "terminal-dev";
+export type BuiltinCarouselStyle = "editorial" | "gradient-pop" | "paper-light" | "terminal-dev";
 
-/** All valid style ids (for validation + a dashboard dropdown). */
-export const CAROUSEL_STYLES: CarouselStyle[] = ["editorial", "gradient-pop", "paper-light", "terminal-dev"];
+/**
+ * The builtin style ids.
+ * @deprecated Only lists the builtins — it can't see installed template packs.
+ * Prefer `listCarouselTemplates()` from the registry to enumerate every
+ * available style (builtins + packs) for validation or a dashboard dropdown.
+ */
+export const CAROUSEL_STYLES: readonly BuiltinCarouselStyle[] = [
+  "editorial",
+  "gradient-pop",
+  "paper-light",
+  "terminal-dev",
+];
 
 /**
  * A structured card shown on a list-item slide — most notably a GitHub repo card

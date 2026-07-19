@@ -150,6 +150,18 @@ pnpm tsx ../../packages/carousel-render/scripts/render-brand-assets.mts
 Details, plus the two logo placeholders you swap for your own, are in
 [docs/branding.md](docs/branding.md).
 
+## Templates
+
+Four built-in starter styles ship in the box: `editorial`, `gradient-pop`,
+`paper-light`, and `terminal-dev`. Every style renders the same slide data, so
+switching looks is a dropdown choice, not a rewrite. Writing your own style is
+one file: implement `defineCarouselTemplate({ id, label, hook, body, cta })`
+against the `@cmd/carousel-render/template-api` toolkit, drop it in
+`packages/carousel-render/templates/`, and run one command,
+`pnpm templates:sync`. Packs you buy or download install the same way: unzip
+into that folder and sync, with zero code edits. Full authoring guide, the
+vnode rules, and the deck test recipe: [docs/templates.md](docs/templates.md).
+
 ## More screenshots
 
 <details>
@@ -234,6 +246,7 @@ integration points in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The monorepo, state machine, data model, and integration points. |
 | [docs/connect-your-agent.md](docs/connect-your-agent.md) | Connect Claude or OpenRouter, model config, and the no-publish safety design. |
 | [docs/branding.md](docs/branding.md) | Brand env vars, logo assets, and regenerating your visual identity. |
+| [docs/templates.md](docs/templates.md) | Carousel styles: how the template registry works, installing packs, and writing your own. |
 | [docs/scripts.md](docs/scripts.md) | The operator scripts: render, register, threads, seed, smoke tests. |
 | [docs/deployment.md](docs/deployment.md) | Production deployment on Railway or Vercel, plus optional Postiz and n8n. |
 | [docs/tiktok-auto-post.md](docs/tiktok-auto-post.md) | Push approved carousels to TikTok drafts. |
