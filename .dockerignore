@@ -1,0 +1,11 @@
+# Keep the build context small + never ship secrets or local renders.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+.git
+**/.env
+**/.env.*
+**/.vercel
+apps/control-plane/public/carousels
+*.log

@@ -1,0 +1,65 @@
+# Postiz self-hosted (lean: Postgres + Redis, no Temporal) — roadmap §3A pin v2.11.3.
+# Exposed on http://localhost:5050 (5000 collides with macOS AirPlay).
+# Platform OAuth app keys live in ./.env (gitignored) — paste yours there, then
+# `docker compose up -d` again to apply.
+services:
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:v2.11.3
+    container_name: cmd-postiz
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postiz:postiz@postiz-db:5432/postiz
+      REDIS_URL: redis://postiz-redis:6379
+      FRONTEND_URL: http://localhost:5050
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:5050/api
+      BACKEND_INTERNAL_URL: http://localhost:3000
+      IS_GENERAL: "true"
+      STORAGE_PROVIDER: local
+      UPLOAD_DIRECTORY: /uploads
+      NEXT_PUBLIC_UPLOAD_DIRECTORY: /uploads
+    ports:
+      - "5050:5000"
+    volumes:
+      - postiz_config:/config
+      - postiz_uploads:/uploads
+    depends_on:
+      postiz-db:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+
+  postiz-db:
+    image: postgres:17-alpine
+    container_name: cmd-postiz-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postiz
+      POSTGRES_PASSWORD: postiz
+      POSTGRES_DB: postiz
+    volumes:
+      - postiz_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postiz -d postiz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postiz-redis:
+    image: redis:7-alpine
+    container_name: cmd-postiz-redis
+    restart: unless-stopped
+    volumes:
+      - postiz_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postiz_pgdata:
+  postiz_redis:
+  postiz_config:
+  postiz_uploads:

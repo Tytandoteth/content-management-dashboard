@@ -1,0 +1,72 @@
+{
+  "name": "Publish approved content",
+  "_comment": "Import via n8n → Workflows → Import from File. Listens for content.approved from the control-plane outbox, schedules the post via the Postiz API, then calls back to mark the item published. Replace the credential/header placeholders and set POSTIZ_API_URL / CONTROL_PLANE_URL as n8n variables. If your pinned Postiz ships a dedicated n8n node, swap the HTTP Request node for it — the flow is identical.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "content-approved",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-approved",
+      "name": "On content.approved",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.POSTIZ_API_URL }}/public/v1/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "authorization", "value": "={{ $env.POSTIZ_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: $json.payload.scheduledAt ? 'schedule' : 'now', date: $json.payload.scheduledAt, posts: [] }) }}",
+        "options": {}
+      },
+      "id": "postiz-schedule",
+      "name": "Schedule via Postiz",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CONTROL_PLANE_URL }}/api/content/{{ $('On content.approved').item.json.contentItemId }}/transition",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: 'published', actor: 'n8n', postizPostId: $json.id || $json.postId, platforms: [] }) }}",
+        "options": {}
+      },
+      "id": "mark-published",
+      "name": "Mark published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300]
+    }
+  ],
+  "connections": {
+    "On content.approved": {
+      "main": [[{ "node": "Schedule via Postiz", "type": "main", "index": 0 }]]
+    },
+    "Schedule via Postiz": {
+      "main": [[{ "node": "Mark published", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}

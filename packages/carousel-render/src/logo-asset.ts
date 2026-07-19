@@ -1,0 +1,8 @@
+/**
+ * A neutral placeholder logo mark (128px rounded square, brand default orange
+ * #ff7a1a, transparent corners, no text) as a data URI for Satori. This is a
+ * generic placeholder — swap it for your own brand mark. See templates.ts and
+ * types.ts for the other places the mark is referenced.
+ */
+export const LOGO_MARK_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACyklEQVR42u3bsXHiQBSAYdVxKQENUAyBUpq4DpQooA8SAiqgARKqoAISn3ZmmdF5sAAj2bDvC77U43n7Y6+0S/Xx9081gVmn7rSdXefYOXXOnQ8GnfOsjnl2bZ7lbIq1GvOHLTpN/sUt5DSOecaLVwog1bm3OD9un2f/awEsOwcL8esOeS1+LIB5Z2vwL2eb12bSAFY2ci+/gVxNFcDagN/GeuwANob6djZjBbAzzLe1ezYAn/zC/xL4nx98TzC02ze4sqzuDWDuUa/YR8T5PQF4yVP2y6LBAJaGVLzlUADe7cc4O7gaQG04YdTXAnCkG+so+b8AFoYSzqIfQGMg4TT9AFzjinm9rLpc4DSQmGZ2/8GfBqp87dgwYmqd9we/L2ADGHwjWOVvoRhGTKfK0W/sI+LKEGITgAAMQQAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABMDDAZwNIqxzCuBkEGGdUgBHgwjrmALYGURYuxRAaxBhtSmA2iDCqlMAM4MIa5YCsBEMugFMa38JoDGQcJp+AAsDCWfRDyDZG0oY+8u69wPwNBBo938tgORgOMU79Nf8cwBLAyreciiAZGtIxdp+Xu9rAcwdEZd59JvX9mYAycrAirO6ttZfBZCsDa0Y66/WeSiAZGN4b28ztMa3AnBf4M3P+2+t7z0B+EtQ4Cf/0QDsCQr5n/9MAJenA4+Ir/2ot3pkTR8N4PKewMui13zJM390Pb8TQP+1sbOD13i3v/zuOj4TQP8U0VHy7xzp1s+u3xgB9C+VNK6XTX6Nq7lc5hjDmAH0zXKdbX4WPeZvINlA3reRO+WZ7fIM6zzT0dfqHzuF0fRcTdJ2AAAAAElFTkSuQmCC";

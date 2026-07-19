@@ -1,0 +1,237 @@
+// Content Management Dashboard — the control-plane DB (the spine, roadmap §2).
+//
+// This is the thin control plane that sits ON TOP of Postiz. Postiz owns its own
+// publishing state (scheduled/published/failed) in its own Postgres; this DB owns
+// the FULL lifecycle (idea → measured) and orchestration state. Keeping our custom
+// logic here — out of the forked Postiz codebase — is what keeps Postiz upgrades
+// painless.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// The content lifecycle states. Mirrors @cmd/contracts ContentStatus — the
+/// contracts package is the behavioral source of truth for *transitions*; this
+/// enum is the storage representation.
+enum ContentStatus {
+  idea
+  draft
+  in_review
+  approved
+  scheduled
+  published
+  measured
+  rejected
+}
+
+enum BrandSurface {
+  default
+}
+
+enum ContentType {
+  tweet
+  thread
+  clip
+  carousel
+  video
+  post
+}
+
+/// One piece of content as a single record moving through the state machine.
+model ContentItem {
+  id           String        @id @default(cuid())
+  type         ContentType
+  brandSurface BrandSurface  @default(default)
+  title        String
+  /// Free-form body/spec for the item (caption text, prompt, clip params, etc.).
+  payload      Json          @default("{}")
+  /// Generated/attached asset URLs (images, video renders).
+  assetUrls    Json          @default("[]")
+  status       ContentStatus @default(idea)
+
+  /// Set when status moves to `rejected` — carried back so the AI learns taste.
+  rejectionReason String?
+
+  /// Link out to Postiz once scheduled/published. The publish system of record.
+  postizPostId String?
+
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  measuredAt  DateTime?
+
+  createdBy String
+
+  transitions   StateTransition[]
+  events        OutboxEvent[]
+  metrics       Metric[]
+  commentReplies CommentReply[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([brandSurface, status])
+  @@index([postizPostId])
+}
+
+/// Append-only audit log of every state change (who/when/why).
+model StateTransition {
+  id            String        @id @default(cuid())
+  contentItem   ContentItem   @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  contentItemId String
+  fromStatus    ContentStatus
+  toStatus      ContentStatus
+  actor         String
+  reason        String?
+  at            DateTime      @default(now())
+
+  @@index([contentItemId, at])
+}
+
+/// Transactional outbox. Events are written in the SAME transaction as the state
+/// change, then drained to consumers (n8n, future services). This guarantees an
+/// event is emitted iff the state change committed — the §1 shared contract.
+model OutboxEvent {
+  id            String       @id @default(cuid())
+  type          String // EventType from @cmd/contracts
+  contentItem   ContentItem? @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  contentItemId String?
+  payload       Json         @default("{}")
+  createdAt     DateTime     @default(now())
+  /// Null until a consumer has acknowledged delivery.
+  processedAt   DateTime?
+  /// Delivery attempts, for retry/backoff and dead-lettering.
+  attempts      Int          @default(0)
+  lastError     String?
+
+  @@index([processedAt, createdAt])
+  @@index([type])
+}
+
+/// Normalized performance metrics pulled back from Analytics, closing the loop
+/// (published → measured).
+model Metric {
+  id            String      @id @default(cuid())
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  contentItemId String
+  platform      String
+  key           String // e.g. impressions, likes, signups, installs
+  value         Float
+  capturedAt    DateTime    @default(now())
+
+  @@unique([contentItemId, platform, key, capturedAt])
+  @@index([contentItemId])
+  @@index([key])
+}
+
+/// A saved one-click workflow (roadmap §5.3): a brief template + count + schedule
+/// policy that expands into a batch of draft content items via the Generation
+/// service. "Podcast → 10 clips → schedule M–F noon → hold for approval."
+model Recipe {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  /// { brief: {type, prompt, sourceUrl?, engine?}, count, schedule: SchedulePolicy }
+  spec        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// Audit log of orchestrator runs (roadmap §2 — the control plane owns
+/// orchestration state). One row per plain-English request the brain handled.
+model OrchestrationRun {
+  id             String   @id @default(cuid())
+  request        String
+  summary        String
+  planner        String
+  /// The full OrchestrationPlan (summary + steps) as produced by the planner.
+  plan           Json
+  /// planned | executed | failed
+  status         String   @default("planned")
+  /// Ids of content items this run created (drafts held for approval).
+  createdItemIds String[] @default([])
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// A connected TikTok account (Login Kit OAuth tokens) used to push carousels to
+/// the creator's inbox/drafts via the Content Posting API. Usually one row.
+model TikTokConnection {
+  id               String   @id @default(cuid())
+  /// TikTok open_id — stable per-user id for this app. Unique = one row/account.
+  openId           String   @unique
+  /// Optional human label (e.g. the @handle) for the settings UI.
+  label            String?
+  scope            String
+  accessToken      String
+  refreshToken     String
+  accessExpiresAt  DateTime
+  refreshExpiresAt DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Catalog of AI tools the carousel composer draws from, so each post can feature
+/// FRESH tools instead of the same handful. `useCount`/`lastUsedAt` let the picker
+/// rotate least-recently-used tools to the front and keep content novel.
+model AiTool {
+  id         String    @id @default(cuid())
+  /// Display name, e.g. "DeepL". Unique so seeds/imports are idempotent.
+  name       String    @unique
+  /// Bare domain shown on slides, e.g. "deepl.com".
+  domain     String
+  /// Full URL for the resource article / link in bio.
+  url        String?
+  /// Bucket for category-targeted generation, e.g. "writing", "video", "automation".
+  category   String
+  /// One sentence: what it does.
+  oneLiner   String
+  /// The money/time hook angle (what it makes or saves you).
+  payoff     String
+  /// free | freemium | paid
+  pricing    String    @default("freemium")
+  tags       String[]  @default([])
+  /// Rotation bookkeeping — how many carousels have featured it, and when last.
+  useCount   Int       @default(0)
+  lastUsedAt DateTime?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([category, active])
+  @@index([useCount, lastUsedAt])
+}
+
+/// An AI-drafted reply to a comment on a published video. We match the comment to
+/// the video's ContentItem so the reply can point to that post's resource article
+/// (and answer tool-specific questions). Every reply is human-reviewed before it's
+/// sent/copied. `externalId` is the platform comment id for the future Instagram
+/// auto-reply path; null for the manual paste flow.
+model CommentReply {
+  id            String      @id @default(cuid())
+  contentItemId String
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  /// "tiktok" | "instagram"
+  platform      String      @default("tiktok")
+  comment       String
+  commenter     String?
+  externalId    String?     @unique
+  draftReply    String
+  /// drafted | approved | sent | dismissed
+  status        String      @default("drafted")
+  /// "manual_copy" | "instagram_api"
+  sentVia       String?
+  sentAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status, createdAt])
+  @@index([contentItemId])
+}

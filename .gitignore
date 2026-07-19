@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# prisma
+packages/db/generated/
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
+
+# firecrawl scrape cache
+.firecrawl/
+
+# rendered carousel slides (preview) + staged post bundles
+apps/control-plane/public/carousels/
+output/
+.vercel
+
+# local DB backups (backup-db.sh)
+infra/dev/backups/

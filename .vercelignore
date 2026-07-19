@@ -1,0 +1,8 @@
+# Rendered carousel slides accumulate on local disk during dev/testing and
+# have no business in a deployment — production uses Vercel Blob storage
+# (BLOB_READ_WRITE_TOKEN) instead of the local public/carousels dir. Without
+# this, hundreds of MB of locally-generated preview images get swept into
+# every serverless function that touches the render pipeline, blowing past
+# Vercel's 250MB uncompressed function size limit.
+apps/control-plane/public/carousels/
+output/

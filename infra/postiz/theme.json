@@ -1,0 +1,19 @@
+{
+  "_comment": "Teal token mirror for the Postiz reskin. Keep in sync with apps/control-plane/src/theme/theme.ts. Apply via Postiz's theme/CSS-variable overrides + logo swap so Postiz and the control plane read as one product (roadmap §5).",
+  "brand": {
+    "name": "Content Management Dashboard",
+    "primary": "#03a98a",
+    "primaryHover": "#028870",
+    "accent": "#16c79e"
+  },
+  "surface": {
+    "bg": "#08090c",
+    "panel": "#0d0f14",
+    "panelRaised": "#13161d",
+    "border": "#1c212b"
+  },
+  "text": {
+    "primary": "#e2e8f0",
+    "muted": "#94a3b8"
+  }
+}

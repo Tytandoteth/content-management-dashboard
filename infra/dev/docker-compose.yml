@@ -1,0 +1,27 @@
+# Local development infra only. Production runs on Railway (see docs/deployment.md).
+# Explicit project name so this stack's containers/volumes never collide with
+# another repo whose compose file also lives in an infra/dev directory.
+name: content-dashboard
+services:
+  control-plane-db:
+    image: postgres:17
+    container_name: content-dashboard-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: content_dashboard
+    # Host port 55433 (not 5432) so this DB never collides with any other
+    # Postgres already bound to 5432 on your machine.
+    ports:
+      - "55433:5432"
+    volumes:
+      - control_plane_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d content_dashboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  control_plane_pgdata:

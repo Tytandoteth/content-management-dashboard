@@ -1,0 +1,33 @@
+{
+  "name": "content-management-dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open-source content management dashboard with AI carousel generation",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @cmd/db generate",
+    "db:migrate": "dotenv -e .env -- pnpm --filter @cmd/db migrate",
+    "db:migrate:deploy": "dotenv -e .env -- pnpm --filter @cmd/db migrate:deploy",
+    "db:push": "dotenv -e .env -- pnpm --filter @cmd/db push",
+    "db:seed": "dotenv -e .env -- pnpm --filter @cmd/db seed",
+    "db:studio": "dotenv -e .env -- pnpm --filter @cmd/db studio",
+    "db:up": "docker compose -f infra/dev/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/dev/docker-compose.yml down",
+    "db:backup": "bash infra/dev/backup-db.sh",
+    "db:restore": "bash infra/dev/restore-db.sh",
+    "tsx": "dotenv -e .env -- pnpm --filter @cmd/control-plane exec tsx"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^10.0.0",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "style": "gradient-pop",
+  "format": "tiktok",
+  "topic": "5 npm packages that feel like cheat codes",
+  "caption": "5 npm packages that feel like cheat codes, send emails, resize images, fake an entire API, read text from images, and control a browser, all in a few lines. Most devs have never touched them. Save this and go star your favorite.",
+  "hashtags": ["#javascript", "#webdev", "#coding", "#npm", "#nodejs"],
+  "slides": [
+    {
+      "role": "hook",
+      "kicker": "hidden gems",
+      "headline": "5 npm packages you had no idea existed",
+      "bgImageUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3DjkmXeA9yhWjtAj7AsBUYHGEts/hf_20260705_195907_858c40ce-f96c-4f32-b4b6-a20c6625e62b.png"
+    },
+    {
+      "role": "body",
+      "headline": "Nodemailer",
+      "body": "Send real emails from your app in a few lines, attachments, HTML, the works.",
+      "repo": "nodemailer/nodemailer",
+      "terminal": {
+        "title": "app.js",
+        "lines": [
+          { "text": "$ npm i nodemailer", "kind": "prompt" },
+          { "text": "$ node app.js", "kind": "prompt" },
+          { "text": "Message sent to user@site.com", "kind": "ok" }
+        ]
+      }
+    },
+    {
+      "role": "body",
+      "headline": "sharp",
+      "body": "Resize, crop, convert, and optimize images at ludicrous speed. Every app needs it.",
+      "repo": "lovell/sharp",
+      "terminal": {
+        "title": "resize.js",
+        "lines": [
+          { "text": "$ npm i sharp", "kind": "prompt" },
+          { "text": "$ node resize.js hero.jpg", "kind": "prompt" },
+          { "text": "4000x3000 to 800x600 · 91% smaller", "kind": "ok" }
+        ]
+      }
+    },
+    {
+      "role": "body",
+      "headline": "json-server",
+      "body": "A full fake REST API in 30 seconds, zero backend code. Prototype your frontend first.",
+      "repo": "typicode/json-server",
+      "terminal": {
+        "title": "terminal",
+        "lines": [
+          { "text": "$ npm i -g json-server", "kind": "prompt" },
+          { "text": "$ json-server db.json", "kind": "prompt" },
+          { "text": "API up on localhost:3000", "kind": "ok" }
+        ]
+      }
+    },
+    {
+      "role": "body",
+      "headline": "Tesseract.js",
+      "body": "OCR in pure JavaScript, pull the text out of any image, right in the browser.",
+      "repo": "naptha/tesseract.js",
+      "terminal": {
+        "title": "ocr.js",
+        "lines": [
+          { "text": "$ npm i tesseract.js", "kind": "prompt" },
+          { "text": "$ node ocr.js receipt.png", "kind": "prompt" },
+          { "text": "TOTAL: $42.19", "kind": "ok" }
+        ]
+      }
+    },
+    {
+      "role": "body",
+      "headline": "Puppeteer",
+      "body": "Drive a real Chrome browser from code, screenshots, PDFs, scraping, automation.",
+      "repo": "puppeteer/puppeteer",
+      "terminal": {
+        "title": "shot.js",
+        "lines": [
+          { "text": "$ npm i puppeteer", "kind": "prompt" },
+          { "text": "$ node shot.js example.com", "kind": "prompt" },
+          { "text": "saved screenshot.png", "kind": "ok" }
+        ]
+      }
+    },
+    {
+      "role": "cta",
+      "headline": "Save this before you lose it",
+      "body": "Which one are you installing first?"
+    }
+  ]
+}

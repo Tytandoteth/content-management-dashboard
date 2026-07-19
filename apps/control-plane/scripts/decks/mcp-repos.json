@@ -1,0 +1,50 @@
+{
+  "style": "paper-light",
+  "format": "tiktok",
+  "topic": "5 MCPs that give Claude superpowers",
+  "caption": "MCPs are like plugins that let Claude actually DO things, drive your browser, control your files, make 3D, and more. Here are 5 of the coolest, all open-source and free. Save this and go star your favorite.",
+  "hashtags": ["#claude", "#mcp", "#ai", "#aitools", "#opensource"],
+  "slides": [
+    {
+      "role": "hook",
+      "kicker": "plug-ins for AI",
+      "headline": "5 MCPs that give Claude superpowers",
+      "bgImageUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3DjkmXeA9yhWjtAj7AsBUYHGEts/hf_20260705_034741_76adacec-2199-4880-a05c-1bc65592701e.png"
+    },
+    {
+      "role": "body",
+      "headline": "Context7",
+      "body": "Feeds your AI up-to-date docs for any library, so it stops writing outdated, hallucinated code. Just add 'use context7' to your prompt.",
+      "repo": "upstash/context7"
+    },
+    {
+      "role": "body",
+      "headline": "Blender MCP",
+      "body": "Build and edit 3D scenes just by chatting with Claude. It went viral for a reason, describe it, and Blender makes it.",
+      "repo": "ahujasid/blender-mcp"
+    },
+    {
+      "role": "body",
+      "headline": "Playwright MCP",
+      "body": "Microsoft's official MCP that lets your AI open and drive a real browser, click, type, and pull data from any site.",
+      "repo": "microsoft/playwright-mcp"
+    },
+    {
+      "role": "body",
+      "headline": "Desktop Commander",
+      "body": "Gives Claude control of your files and terminal. It can read, edit, run commands, and manage your whole project for you.",
+      "repo": "wonderwhy-er/DesktopCommanderMCP"
+    },
+    {
+      "role": "body",
+      "headline": "Serena",
+      "body": "Turns Claude into a real coding agent with semantic search across your whole codebase, like giving it an IDE's brain.",
+      "repo": "oraios/serena"
+    },
+    {
+      "role": "cta",
+      "headline": "Save this before you lose it",
+      "body": "There are thousands more, which are you adding first?"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "style": "terminal-dev",
+  "format": "tiktok",
+  "topic": "5 GitHub repos everyone's watching right now",
+  "caption": "5 GitHub repos absolutely blowing up right now, one of them went from 9K to 380K+ stars in a few months 🤯 Save this and go star your favorite.",
+  "hashtags": ["#github", "#opensource", "#aitools", "#coding", "#developer"],
+  "slides": [
+    {
+      "role": "hook",
+      "kicker": "trending on github",
+      "headline": "5 repos everyone's watching right now",
+      "bgImageUrl": "https://d8j0ntlcm91z4.cloudfront.net/user_3DjkmXeA9yhWjtAj7AsBUYHGEts/hf_20260703_173612_d1afa6d0-af7c-4b14-bc85-740d8a1c2e58.png"
+    },
+    {
+      "role": "body",
+      "headline": "OpenClaw",
+      "body": "Your own personal AI assistant, any OS. Went from 9K to 380K+ stars in a few months, one of the fastest-growing open source projects ever.",
+      "repo": "openclaw/openclaw"
+    },
+    {
+      "role": "body",
+      "headline": "Langflow",
+      "body": "A visual, drag-and-drop builder for AI agents and workflows. No-code way to prototype what you'd otherwise write by hand.",
+      "repo": "langflow-ai/langflow"
+    },
+    {
+      "role": "body",
+      "headline": "Dify",
+      "body": "A production-ready platform for building and deploying agentic workflows, the infra layer teams reach for once a prototype needs to ship.",
+      "repo": "langgenius/dify"
+    },
+    {
+      "role": "body",
+      "headline": "Firecrawl",
+      "body": "Turns any website into clean markdown or structured JSON for AI agents. If your agent needs to read the web, this is how.",
+      "repo": "firecrawl/firecrawl"
+    },
+    {
+      "role": "body",
+      "headline": "CrewAI",
+      "body": "A framework for orchestrating role-playing autonomous agents that collaborate on complex tasks, multiple agents, one crew.",
+      "repo": "crewAIInc/crewAI"
+    },
+    {
+      "role": "cta",
+      "headline": "Save this before you lose it",
+      "body": "Which one are you starring first?"
+    }
+  ]
+}
