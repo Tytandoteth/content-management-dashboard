@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/banner.png" alt="Content Management Dashboard, an open-source AI carousel studio. Claude writes the slide copy, Satori renders branded slides, you approve every post." width="100%" />
+<img src=".github/assets/hero-banner.png" alt="Content Management Dashboard, an open-source AI carousel studio. Claude writes the slide copy, Satori renders branded slides, you approve every post." width="100%" />
 
 # Content Management Dashboard
 
@@ -30,12 +30,12 @@ Real slides straight out of the renderer, one from each starter style
 (terminal-dev, gradient-pop, paper-light), all with live GitHub repo cards
 (stars, forks, language) and your handle stamped on every one.
 
-<img src=".github/assets/example-slides.png" alt="Three AI-generated TikTok carousel slides in the terminal-dev, gradient-pop, and paper-light starter styles, each showing a live GitHub repo card with star and fork counts and a creator handle." width="100%" />
+<img src=".github/assets/starter-styles.png" alt="Three AI-generated TikTok carousel slides in the terminal-dev, gradient-pop, and paper-light starter styles, each showing a live GitHub repo card with star and fork counts and a creator handle." width="100%" />
 
 The dashboard is where you compose, review, and approve. Nothing ships until a
 human presses the button.
 
-<img src=".github/assets/screenshot-dashboard.png" alt="Content Management Dashboard home screen showing the AI carousel pipeline overview, a New carousel box, and the human approval inbox." width="100%" />
+<img src=".github/assets/dashboard-home.png" alt="Content Management Dashboard home screen showing the AI carousel pipeline overview, a New carousel box, and the human approval inbox." width="100%" />
 
 ## How it works
 
@@ -152,9 +152,9 @@ Details, plus the two logo placeholders you swap for your own, are in
 
 <br />
 
-<img src=".github/assets/screenshot-board.png" alt="Kanban board view of content items grouped by lifecycle status from idea through draft, in review, approved, and published." width="100%" />
+<img src=".github/assets/content-board.png" alt="Kanban board view of content items grouped by lifecycle status from idea through draft, in review, approved, and published." width="100%" />
 
-<img src=".github/assets/screenshot-tools.png" alt="AI tools catalog page with a generate from the freshest tools action that composes TikTok carousels featuring your least recently used tools." width="100%" />
+<img src=".github/assets/tools-studio.png" alt="AI tools catalog page with a generate from the freshest tools action that composes TikTok carousels featuring your least recently used tools." width="100%" />
 
 </details>
 

@@ -8,7 +8,7 @@
  *   pnpm tsx ../../packages/carousel-render/scripts/render-brand-assets.mts
  *
  * Outputs:
- *   .github/assets/banner.png           1600x480  README hero
+ *   .github/assets/hero-banner.png           1600x480  README hero
  *   .github/assets/social-preview.png   1280x640  GitHub social preview (upload in repo Settings)
  *   apps/control-plane/public/logo.png       512  dashboard logo
  *   apps/control-plane/public/logo-mark.png  512  square mark
@@ -171,7 +171,7 @@ await mkdir(assetsDir, { recursive: true });
 const markDataUri = `data:image/svg+xml;base64,${Buffer.from(markSvg(512)).toString("base64")}`;
 
 const jobs: Array<[string, Promise<Buffer>]> = [
-  [join(assetsDir, "banner.png"), renderNodePng(bannerNode(1600, 480, markDataUri, false), 1600, 480)],
+  [join(assetsDir, "hero-banner.png"), renderNodePng(bannerNode(1600, 480, markDataUri, false), 1600, 480)],
   [join(assetsDir, "social-preview.png"), renderNodePng(bannerNode(1280, 640, markDataUri, true), 1280, 640)],
   [join(publicDir, "logo.png"), svgToPng(markSvg(512), 512)],
   [join(publicDir, "logo-mark.png"), svgToPng(markSvg(512), 512)],

@@ -55,7 +55,7 @@ script from the repo root. It reads your brand kit and writes:
 
 | Output | Size | Purpose |
 |---|---|---|
-| `.github/assets/banner.png` | 1600x480 | README hero banner. |
+| `.github/assets/hero-banner.png` | 1600x480 | README hero banner. |
 | `.github/assets/social-preview.png` | 1280x640 | GitHub social preview (upload it under repo Settings). |
 | `apps/control-plane/public/logo.png` | 512 | Dashboard logo. |
 | `apps/control-plane/public/logo-mark.png` | 512 | Square mark. |
