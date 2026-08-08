@@ -60,9 +60,16 @@ describe("publishItem", () => {
       content: "the caption",
       title: "fallback title",
       thread: [],
+      threadMedia: undefined,
       mediaUrls: ["https://cdn/x.png"],
       scheduledAt: "2026-06-10T12:00:00.000Z",
       stripXLinks: true,
+      // Asserted explicitly because it decides whether a post goes live: UPLOAD
+      // delivers into the creator's TikTok drafts, DIRECT_POST publishes to the
+      // feed. If this default ever flips silently, content nobody chose to
+      // publish gets published.
+      tiktokPostingMethod: "UPLOAD",
+      asDraft: undefined,
     });
   });
 

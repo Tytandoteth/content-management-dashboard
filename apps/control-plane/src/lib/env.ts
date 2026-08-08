@@ -71,6 +71,20 @@ export const env = {
   // approved carousels are staged for manual posting until this is validated.
   autoPublish: () => (process.env.AUTO_PUBLISH ?? "false") === "true",
 
+  /**
+   * How Postiz hands a TikTok post over.
+   *   UPLOAD      — lands in the creator's TikTok inbox/drafts. You open the app,
+   *                 add a trending sound, and post. NOTHING reaches the feed until
+   *                 you do, which reads exactly like a broken integration
+   *                 (observed 2026-08-07: "the post is not showing up on TikTok"
+   *                 — it had delivered fine, into drafts).
+   *   DIRECT_POST — publishes straight to the feed, no chance to add a sound.
+   * Default stays UPLOAD because a trending sound is worth more than the manual
+   * step; set TIKTOK_POSTING_METHOD=DIRECT_POST to publish automatically.
+   */
+  tiktokPostingMethod: (): "UPLOAD" | "DIRECT_POST" =>
+    process.env.TIKTOK_POSTING_METHOD === "DIRECT_POST" ? "DIRECT_POST" : "UPLOAD",
+
   // --- TikTok auto-posting (Content Posting API, draft/inbox mode) ----------
   tiktokClientKey: () => process.env.TIKTOK_CLIENT_KEY ?? "",
   tiktokClientSecret: () => process.env.TIKTOK_CLIENT_SECRET ?? "",

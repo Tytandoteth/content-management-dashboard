@@ -46,6 +46,21 @@ export interface SchedulePostInput {
   /** ISO-8601 publish time. Omit to publish now. */
   scheduledAt?: string;
   /**
+   * Create the post as a Postiz DRAFT (type "draft") instead of sending it. The
+   * post lands in the Postiz dashboard for a human to review and post by hand —
+   * it never touches the delivery worker.
+   *
+   * This is the reliable path for TikTok. Observed 2026-08-07 on a live account:
+   * every TikTok post handed to Postiz's delivery worker sat in QUEUE past its
+   * publish time and never delivered — via `now`, via `schedule`, and after a
+   * full channel reconnect — while the same account's Instagram and X posts
+   * published normally. The post cleared Postiz's `disabled` and `refreshNeeded`
+   * guards and simply never ran. Drafting sidesteps the worker entirely.
+   *
+   * Overrides `scheduledAt`.
+   */
+  asDraft?: boolean;
+  /**
    * When true, drop link-bearing thread replies for the X provider — this Postiz
    * instance strips links from X posts (STRIP_LINKS_FROM_X_POSTS), so a link-only
    * reply would publish as a dangling label. Other providers keep the reply.
@@ -283,9 +298,13 @@ export class PostizClient {
       }),
     );
 
+    // draft → lands in the Postiz dashboard, never sent (state DRAFT).
+    // schedule → fires at `date`. now → fires immediately. The DTO's valid set
+    // is ['draft','schedule','now','update'] (create.post.dto.ts upstream).
+    const type = input.asDraft ? "draft" : input.scheduledAt ? "schedule" : "now";
     const body = {
-      type: input.scheduledAt ? "schedule" : "now",
-      // date is required by the DTO even for "now".
+      type,
+      // date is required by the DTO even for "now"/"draft".
       date: input.scheduledAt ?? new Date().toISOString(),
       shortLink: false,
       tags: [],

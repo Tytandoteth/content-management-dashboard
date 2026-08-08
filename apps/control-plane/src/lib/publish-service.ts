@@ -72,6 +72,7 @@ export class PublishConfigError extends Error {
 export async function publishItem(
   item: PublishableItem,
   client: PostizClient,
+  opts: { asDraft?: boolean } = {},
 ): Promise<PublishOutcome> {
   const payload = item.payload ?? {};
 
@@ -193,7 +194,13 @@ export async function publishItem(
         mediaUrls: g.mediaUrls,
         threadMedia: g.threadMedia,
         scheduledAt: item.scheduledAt?.toISOString(),
+        // Without this the client's UPLOAD default silently wins and every
+        // TikTok post lands in drafts instead of the feed.
+        tiktokPostingMethod: env.tiktokPostingMethod(),
         stripXLinks: env.postizStripsXLinks(),
+        // Draft mode: create the post in Postiz for manual review/posting rather
+        // than handing it to the delivery worker.
+        asDraft: opts.asDraft,
       });
       posts.push({ postId: res.postId, provider: g.provider, integrationIds: g.ids });
     } catch (err) {

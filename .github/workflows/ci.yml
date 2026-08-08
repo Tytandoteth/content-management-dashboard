@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # The build imports env.ts, which requires DATABASE_URL. Nothing connects
+      # during typecheck/test/build, so a syntactically valid URL is enough.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Keep auth ON in CI so the Dockerfile's secure default is what gets built.
+      NEXT_PUBLIC_DISABLE_AUTH: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # --frozen-lockfile so a lockfile that drifted from package.json fails here
+      # rather than at deploy time.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @cmd/db exec prisma generate
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

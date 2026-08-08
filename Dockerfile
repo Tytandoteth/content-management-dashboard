@@ -11,7 +11,18 @@ RUN corepack enable
 WORKDIR /app
 
 # NEXT_PUBLIC_* must exist at build time (baked into the client bundle).
-ARG NEXT_PUBLIC_DISABLE_AUTH=true
+#
+# Defaults to "false" (auth ON). This previously defaulted to "true", so anyone
+# who built this image without overriding it shipped a dashboard with NO
+# authentication — every route public, including the ones that approve and
+# publish content. Because NEXT_PUBLIC_* is inlined into the client bundle at
+# build time, that could not be corrected with a runtime env var; the image had
+# to be rebuilt. Secure by default; opt out explicitly for a local run:
+#
+#   docker build --build-arg NEXT_PUBLIC_DISABLE_AUTH=true .
+#
+# With auth on, also set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY.
+ARG NEXT_PUBLIC_DISABLE_AUTH=false
 ENV NEXT_PUBLIC_DISABLE_AUTH=$NEXT_PUBLIC_DISABLE_AUTH
 
 COPY . .
