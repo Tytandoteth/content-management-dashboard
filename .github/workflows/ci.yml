@@ -26,9 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `version:` here on purpose — package.json pins `packageManager`, and
+      # specifying both makes the action fail with "Multiple versions of pnpm
+      # specified". Keeping it in package.json alone means CI and local dev can
+      # never disagree about the pnpm version.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
