@@ -5,31 +5,12 @@ on:
     branches: [main]
   pull_request:
 
-# A newer push to the same branch makes the in-flight run pointless.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  verify:
-    name: typecheck · test · build
+  checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    env:
-      # The build imports env.ts, which requires DATABASE_URL. Nothing connects
-      # during typecheck/test/build, so a syntactically valid URL is enough.
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-      # Keep auth ON in CI so the Dockerfile's secure default is what gets built.
-      NEXT_PUBLIC_DISABLE_AUTH: "false"
-
     steps:
       - uses: actions/checkout@v4
 
-      # No `version:` here on purpose — package.json pins `packageManager`, and
-      # specifying both makes the action fail with "Multiple versions of pnpm
-      # specified". Keeping it in package.json alone means CI and local dev can
-      # never disagree about the pnpm version.
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -37,13 +18,16 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # --frozen-lockfile so a lockfile that drifted from package.json fails here
-      # rather than at deploy time.
-      - name: Install
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: pnpm --filter @cmd/db exec prisma generate
+        run: pnpm db:generate
+
+      - name: Template index drift check
+        run: |
+          pnpm templates:sync
+          git diff --exit-code packages/carousel-render/src/templates.index.generated.ts
 
       - name: Typecheck
         run: pnpm typecheck

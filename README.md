@@ -6,6 +6,7 @@
 
 **Open-source AI carousel studio: Claude writes the copy, Satori renders branded slides, you approve every post.**
 
+[![CI](https://github.com/Tytandoteth/content-management-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Tytandoteth/content-management-dashboard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Node >=20](https://img.shields.io/badge/Node-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
@@ -161,6 +162,20 @@ against the `@cmd/carousel-render/template-api` toolkit, drop it in
 `pnpm templates:sync`. Packs you buy or download install the same way: unzip
 into that folder and sync, with zero code edits. Full authoring guide, the
 vnode rules, and the deck test recipe: [docs/templates.md](docs/templates.md).
+
+### Premium templates
+
+Official premium packs add richer styles built on carousel structures tested on
+a real AI-tools account: cinematic glass panels, poster-grade typography, and
+repo cards designed to stop the scroll. The first pack, **Creator Launch Pack**
+(`midnight-glass` + `studio-bold`), is finished and launching soon. It drops
+first on [@ty.prompts.ai](https://www.tiktok.com/@ty.prompts.ai), so follow
+there to catch the launch price.
+
+<img src=".github/assets/premium-pack-01.png" alt="Four slides from the Creator Launch Pack premium templates: Midnight Glass dark cinematic hook and GitHub repo card slides, and Studio Bold high-contrast poster slides with a bold save-this call to action." width="100%" />
+
+Premium packs install exactly like any other pack (unzip, `pnpm templates:sync`)
+and come with example decks, preview renders, and a commercial license.
 
 ## More screenshots
 

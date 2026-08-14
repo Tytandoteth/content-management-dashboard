@@ -410,8 +410,15 @@ Official premium packs install exactly the same way as any other pack:
 unzip into `packages/carousel-render/templates/`, run `pnpm templates:sync`,
 restart. There's no separate installer and no code changes: a paid pack is
 just a `.ts` file (or a few) that happens to have been written by someone
-else. Find them at the project's template store (link in the README when
-available).
+else.
+
+The first official pack, **Creator Launch Pack** (`midnight-glass`, a dark
+cinematic glass style, plus `studio-bold`, a high-contrast poster style), is
+finished and launching soon. It announces first on
+[@ty.prompts.ai](https://www.tiktok.com/@ty.prompts.ai); the store link will
+land here and in the README when it goes live. Each pack ships with example
+decks, preview renders, and a commercial license (unlimited rendered output
+for your own brands and clients; no redistribution of the template source).
 
 ---
 
