@@ -13,6 +13,13 @@ import { RecipeList } from "@/components/RecipeList";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Posted content, in every form it takes. `measured` is what `published` becomes
+ * once analytics closes the loop, so omitting it dropped a post off the calendar
+ * the moment it succeeded.
+ */
+const CALENDAR_STATUSES = ["scheduled", "published", "measured"] as const;
+
 async function loadDashboard() {
   const counts = Object.fromEntries(CONTENT_STATUSES.map((s) => [s, 0])) as Record<ContentStatus, number>;
   try {
@@ -21,7 +28,7 @@ async function loadDashboard() {
 
     const [inReview, calendar, ready, recipes] = await Promise.all([
       prisma.contentItem.findMany({ where: { status: "in_review" }, orderBy: { createdAt: "asc" }, take: 6 }),
-      prisma.contentItem.findMany({ where: { status: { in: ["scheduled", "published"] } }, orderBy: { scheduledAt: "asc" }, take: 6 }),
+      prisma.contentItem.findMany({ where: { status: { in: [...CALENDAR_STATUSES] } }, orderBy: { scheduledAt: "asc" }, take: 6 }),
       prisma.contentItem.findMany({ where: { status: "approved" }, orderBy: { updatedAt: "desc" }, take: 6 }),
       prisma.recipe.findMany({ orderBy: { name: "asc" }, take: 4 }),
     ]);
@@ -164,5 +171,6 @@ export default async function Dashboard() {
 }
 
 function STATUS_COLOR(status: string): string {
+  if (status === "measured") return "var(--st-measured)";
   return status === "published" ? "var(--st-published)" : status === "scheduled" ? "var(--st-scheduled)" : "var(--muted)";
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  GeneratedAsset,
   GenerationBrief,
   GenerationResult,
   Generator,
@@ -32,15 +33,30 @@ function titleFromSpec(spec: CarouselSpec): string | null {
 }
 
 /**
+ * Upper bound on carousels per brief. Each one is a full LLM compose plus two
+ * Satori render passes (TikTok + Instagram), so this is what keeps a single
+ * request inside the route's 60s budget.
+ */
+const MAX_CAROUSELS_PER_BRIEF = 5;
+
+/**
  * The carousel engine. Behind the standard Generator contract:
  *
  *   topic/brief → Claude writes the slide deck (composeSpec)
  *              → BackgroundProvider resolves AI/gradient backgrounds
  *              → Satori renders branded PNGs, stored for preview (renderAndStore)
- *              → one GenerationResult asset carrying every slide URL + caption
+ *              → one GenerationResult asset per carousel, each carrying every
+ *                slide URL + caption
  *
- * That asset flows through generation-service → createContent as a `draft`
- * carousel, hitting the SAME approval gate as everything else.
+ * Those assets flow through generation-service → createContent as `draft`
+ * carousels, hitting the SAME approval gate as everything else.
+ *
+ * `brief.count` is the NUMBER OF CAROUSELS, matching every other generator (and
+ * matching what plans say: "Generate 3 carousels" now makes 3 carousels). It
+ * used to be quietly reinterpreted as the slide count, so an orchestrator plan
+ * promising 3 carousels produced one 3-slide deck. Slides per carousel are set
+ * by `brief.metadata.slideCount`; without it the composer uses its own default,
+ * which the topic's own promised count ("5 AI tools") can still override.
  */
 export class CarouselComposer implements Generator {
   readonly name = "carousel-composer";
@@ -57,7 +73,37 @@ export class CarouselComposer implements Generator {
     // Visual style is chosen at generation time (e.g. from the dashboard), carried
     // on the brief's metadata. Defaults to the original "editorial" look.
     const style = (brief.metadata?.style as CarouselStyle | undefined) ?? "editorial";
-    const spec = await composeSpec(brief.prompt, { slideCount: brief.count });
+    const rawSlideCount = brief.metadata?.slideCount;
+    const slideCount = typeof rawSlideCount === "number" && Number.isFinite(rawSlideCount)
+      ? Math.round(rawSlideCount)
+      : undefined;
+
+    const requested = Number.isFinite(brief.count) ? Math.round(brief.count as number) : 1;
+    const carousels = Math.max(1, Math.min(MAX_CAROUSELS_PER_BRIEF, requested));
+
+    const assets: GeneratedAsset[] = [];
+    const specs: CarouselSpec[] = [];
+    for (let n = 0; n < carousels; n++) {
+      const { asset, spec } = await this.composeOne(brief, style, slideCount);
+      assets.push(asset);
+      specs.push(spec);
+    }
+
+    return {
+      engine: this.engine,
+      assets,
+      // One carousel keeps the original single-spec shape; a batch carries all.
+      raw: specs.length === 1 ? { spec: specs[0] } : { specs },
+    };
+  }
+
+  /** Compose, render and store exactly one carousel. */
+  private async composeOne(
+    brief: GenerationBrief,
+    style: CarouselStyle,
+    slideCount: number | undefined,
+  ): Promise<{ asset: GeneratedAsset; spec: CarouselSpec }> {
+    const spec = await composeSpec(brief.prompt, { ...(slideCount ? { slideCount } : {}) });
 
     // Hybrid look: resolve a background per slide (gradient by default).
     const bg = buildBackgroundProvider();
@@ -80,31 +126,28 @@ export class CarouselComposer implements Generator {
     const longform = await generateLongformArticle(spec);
 
     return {
-      engine: this.engine,
-      assets: [
-        {
-          url: stored.files[0] ?? "",
-          type: "carousel",
-          title: titleFromSpec(spec) ?? brief.prompt,
-          caption,
-          assetUrls: stored.files,
-          metadata: {
-            folderId,
-            dir: stored.dir,
-            topic: spec.topic,
-            slideCount: total,
-            backgroundProvider: bg.name,
-            // The chosen visual style — persisted so re-renders keep it.
-            style,
-            spec,
-            // Instagram 4:5 variant of the same slides (served URLs).
-            instagram: igStored.files,
-            // Long-form companion article for the resource site's /blog.
-            longform,
-          },
+      spec,
+      asset: {
+        url: stored.files[0] ?? "",
+        type: "carousel",
+        title: titleFromSpec(spec) ?? brief.prompt,
+        caption,
+        assetUrls: stored.files,
+        metadata: {
+          folderId,
+          dir: stored.dir,
+          topic: spec.topic,
+          slideCount: total,
+          backgroundProvider: bg.name,
+          // The chosen visual style — persisted so re-renders keep it.
+          style,
+          spec,
+          // Instagram 4:5 variant of the same slides (served URLs).
+          instagram: igStored.files,
+          // Long-form companion article for the resource site's /blog.
+          longform,
         },
-      ],
-      raw: { spec },
+      },
     };
   }
 }

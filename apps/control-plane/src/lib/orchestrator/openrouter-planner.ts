@@ -22,6 +22,18 @@ export interface OpenRouterPlannerOptions {
   fetchImpl?: typeof fetch;
 }
 
+/**
+ * The planner runs inside a 60s request budget and generation still has to
+ * happen after it, so it gets a hard 25s slice. An un-timed fetch here hung the
+ * whole request until the platform killed it, which surfaced to the user as a
+ * blank failure with no explanation.
+ */
+const PLANNER_TIMEOUT_MS = 25_000;
+
+function isTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
 interface ChatCompletion {
   choices?: Array<{ message?: { content?: string | null; tool_calls?: unknown[] } }>;
 }
@@ -46,29 +58,38 @@ export class OpenRouterPlanner implements Planner {
       function: { name: t.name, description: t.description, parameters: t.input_schema },
     }));
 
-    const res = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${this.apiKey}`,
-        // OpenRouter attribution headers (optional but recommended).
-        "x-title": "content-management-dashboard",
-      },
-      body: JSON.stringify({
-        model: this.model,
-        tools,
-        tool_choice: "auto",
-        messages: [
-          { role: "system", content: ORCHESTRATOR_SYSTEM_PROMPT },
-          {
-            role: "user",
-            content:
-              `Available recipes: ${context.recipeSlugs.join(", ") || "none"}.\n\n` +
-              `Request: ${request}`,
-          },
-        ],
-      }),
-    });
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.apiKey}`,
+          // OpenRouter attribution headers (optional but recommended).
+          "x-title": "content-management-dashboard",
+        },
+        signal: AbortSignal.timeout(PLANNER_TIMEOUT_MS),
+        body: JSON.stringify({
+          model: this.model,
+          tools,
+          tool_choice: "auto",
+          messages: [
+            { role: "system", content: ORCHESTRATOR_SYSTEM_PROMPT },
+            {
+              role: "user",
+              content:
+                `Available recipes: ${context.recipeSlugs.join(", ") || "none"}.\n\n` +
+                `Request: ${request}`,
+            },
+          ],
+        }),
+      });
+    } catch (err) {
+      if (isTimeout(err)) {
+        throw new Error(`planner timed out after ${PLANNER_TIMEOUT_MS / 1000}s`);
+      }
+      throw err;
+    }
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");

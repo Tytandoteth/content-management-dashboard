@@ -10,13 +10,41 @@ import { CarouselPreview } from "./CarouselPreview";
 import { BRANDS, abbrev } from "@/lib/design";
 
 interface Transition { id: string; fromStatus: string; toStatus: string; actor: string; reason: string | null; at: string }
-interface Metric { id: string; platform: string; key: string; value: number; capturedAt: string }
+interface Metric { id: string; platform: string; key: string; value: number; source?: string; capturedAt: string }
+/** One row per metric key: the latest value, when it was taken, how many captures exist. */
+interface MetricSeries { key: string; value: number; capturedAt: string; captures: number; source?: string }
 interface Item {
   id: string; title: string; type: string; brandSurface: string; status: string; createdBy: string;
   payload: Record<string, unknown>; assetUrls: unknown; scheduledAt: string | null; postizPostId: string | null;
 }
 
 const EDITABLE = ["idea", "draft", "in_review", "approved", "scheduled"];
+/** Statuses that can carry metrics — mirrors METRIC_ELIGIBLE_STATUSES server-side. */
+const MEASURABLE = ["published", "measured"];
+
+/**
+ * Collapse the raw Metric rows into one entry per key holding the LATEST value.
+ * Metrics are a TIME SERIES (one capture per hour), so the flat list showed the
+ * same key several times over and the first eight cells were often eight
+ * captures of one number rather than eight different numbers.
+ */
+function latestByKey(metrics: Metric[]): MetricSeries[] {
+  const byKey = new Map<string, MetricSeries>();
+  for (const m of metrics) {
+    const existing = byKey.get(m.key);
+    if (!existing) {
+      byKey.set(m.key, { key: m.key, value: m.value, capturedAt: m.capturedAt, captures: 1, source: m.source });
+      continue;
+    }
+    existing.captures += 1;
+    if (new Date(m.capturedAt) > new Date(existing.capturedAt)) {
+      existing.value = m.value;
+      existing.capturedAt = m.capturedAt;
+      existing.source = m.source;
+    }
+  }
+  return [...byKey.values()];
+}
 
 /** Public resource-article slug from the title (mirrors lib/article.ts slugify). */
 function articleSlug(title: string): string {
@@ -187,27 +215,49 @@ export function ItemDetail({ id }: { id: string }) {
         </Pane>
       )}
 
-      {item.status === "published" && (
-        <Pane label="Analytics" title="Record metrics (closes the measured loop)">
+      {/* Metrics can be entered on `measured` too — the numbers keep arriving for
+          days after a post, and closing the loop must not lock the record. */}
+      {MEASURABLE.includes(item.status) && (
+        <Pane label="Analytics" title={item.status === "published" ? "Record metrics (closes the measured loop)" : "Record metrics (update the numbers)"}>
           <textarea value={metricsText} onChange={(e) => setMetricsText(e.target.value)} rows={2} className="mono" style={{ width: "100%", resize: "vertical", background: "var(--ink-900)", color: "var(--fg)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-md)", padding: "9px 11px", fontSize: "var(--t-sm)" }} />
-          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-            <Btn kind="solid" size="sm" icon="activity" disabled={busy} onClick={() => { let m; try { m = JSON.parse(metricsText); } catch { setErr("metrics must be valid JSON"); return; } act(`/api/content/${id}/metrics`, { metrics: m }); }}>Record metrics</Btn>
-            <Btn kind="primary" size="sm" disabled={busy} onClick={() => act(`/api/analytics/tick`, undefined)} title="Pull metrics and advance to measured">Run analytics → measured</Btn>
+          <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Btn kind="solid" size="sm" icon="activity" disabled={busy} onClick={() => { let m; try { m = JSON.parse(metricsText); } catch { setErr("metrics must be valid JSON"); return; } act(`/api/content/${id}/metrics`, { metrics: m, source: "manual" }); }}>Record metrics</Btn>
+            <Btn kind="primary" size="sm" disabled={busy} onClick={() => act(`/api/analytics/run`, undefined)} title="Pull metrics from Postiz for every published item, then advance the ones with data to measured">Run analytics</Btn>
+            {item.status === "published" && (
+              <Btn kind="ghost" size="sm" icon="check" disabled={busy} onClick={() => transition("measured")} title="Close the loop by hand — use this once the numbers above are recorded">Mark measured</Btn>
+            )}
+          </div>
+          <div style={{ marginTop: 8, fontSize: "var(--t-xs)", color: "var(--muted)", lineHeight: 1.5 }}>
+            {item.status === "published"
+              ? "“Run analytics” only advances items it actually pulled numbers for. With no Postiz connection, record the metrics above and then mark it measured."
+              : "This item is measured. New captures are added to the series below; the latest value per metric is shown."}
           </div>
         </Pane>
       )}
 
-      {/* metrics */}
-      {metrics.length > 0 && (
+      {/* metrics — latest value per key, not the raw capture list */}
+      {(metrics.length > 0 || MEASURABLE.includes(item.status)) && (
         <Pane label="Measured" title="Performance">
-          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            {metrics.slice(0, 8).map((m) => (
-              <div key={m.id}>
-                <div className="display tnum" style={{ fontSize: "var(--t-lg)", fontWeight: 700, color: "var(--teal)" }}>{abbrev(m.value)}</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.key}</div>
-              </div>
-            ))}
-          </div>
+          {metrics.length === 0 ? (
+            <div style={{ fontSize: "var(--t-sm)", color: "var(--muted)", lineHeight: 1.55 }}>
+              No metrics recorded yet. They arrive when the analytics tick pulls them from Postiz
+              (needs <code className="mono">POSTIZ_API_URL</code> and <code className="mono">POSTIZ_API_KEY</code>),
+              or when you paste them into <b>Record metrics</b> above.
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              {latestByKey(metrics).slice(0, 12).map((m) => (
+                <div key={m.key}>
+                  <div className="display tnum" style={{ fontSize: "var(--t-lg)", fontWeight: 700, color: "var(--teal)" }}>{abbrev(m.value)}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.key}</div>
+                  <div className="mono" style={{ fontSize: 10, color: "var(--faint)" }}>
+                    as of {new Date(m.capturedAt).toLocaleDateString()}
+                    {m.captures > 1 ? ` · ${m.captures} captures` : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Pane>
       )}
 

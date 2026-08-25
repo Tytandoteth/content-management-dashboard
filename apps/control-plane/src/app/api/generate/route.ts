@@ -10,7 +10,9 @@ export const maxDuration = 60;
 
 /**
  * POST /api/generate — generate content from a plain-English brief.
- * Body: { type, prompt, brandSurface?, count?, engine?, sourceUrl? }
+ * Body: { type, prompt, brandSurface?, count?, engine?, sourceUrl?, style?, slideCount? }
+ *  - `count` is how many ITEMS to produce (carousels, clips, posts …).
+ *  - `slideCount` is carousel-only: slides per carousel.
  * Produced assets land as `draft` items in the approval inbox.
  */
 export async function POST(request: Request) {
@@ -52,6 +54,13 @@ export async function POST(request: Request) {
     }
     style = body.style;
   }
+  // Carousel-only: slides per carousel. Separate from `count`, which is how many
+  // carousels to make.
+  const slideCount = typeof body.slideCount === "number" ? body.slideCount : undefined;
+  const metadata: Record<string, unknown> = {
+    ...(style ? { style } : {}),
+    ...(slideCount !== undefined ? { slideCount } : {}),
+  };
 
   try {
     const outcome = await runGeneration({
@@ -61,7 +70,7 @@ export async function POST(request: Request) {
       count: typeof body.count === "number" ? body.count : undefined,
       engine: typeof body.engine === "string" ? body.engine : undefined,
       sourceUrl: typeof body.sourceUrl === "string" ? body.sourceUrl : undefined,
-      ...(style ? { metadata: { style } } : {}),
+      ...(Object.keys(metadata).length ? { metadata } : {}),
     });
     void drainOutbox().catch(() => {});
     return NextResponse.json(

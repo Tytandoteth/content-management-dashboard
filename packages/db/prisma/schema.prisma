@@ -122,6 +122,12 @@ model Metric {
   platform      String
   key           String // e.g. impressions, likes, signups, installs
   value         Float
+  /// Where the number came from: "postiz" (analytics tick), "manual" (typed into
+  /// the dashboard), "app_analytics" (product-side connector). Without this a
+  /// hand-typed guess is indistinguishable from a pulled platform number.
+  source        String      @default("postiz")
+  /// Truncated to the top of the hour by the writer, so a re-tick inside the same
+  /// hour dedups against the unique index below and later hours build a series.
   capturedAt    DateTime    @default(now())
 
   @@unique([contentItemId, platform, key, capturedAt])

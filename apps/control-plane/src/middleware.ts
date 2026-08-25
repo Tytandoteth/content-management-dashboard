@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { isPlaceholderToken } from "@/lib/machine-auth";
 
 /**
  * Team auth (Clerk). Everything requires a signed-in team member EXCEPT:
@@ -33,9 +34,14 @@ const clerk = clerkMiddleware(async (auth, req) => {
 
   // Machine access: automation (smoke tests, n8n, connectors) may call any API
   // with the shared service token instead of a Clerk session.
+  //
+  // This bypass is BROADER than the cron routes' own check — it opens every API
+  // — so an unchanged placeholder here would hand the whole dashboard to anyone
+  // who read `.env.example`. `isPlaceholderToken` treats those values as no
+  // token at all, matching requireMachineAuth.
   if (req.nextUrl.pathname.startsWith("/api/")) {
-    const token = process.env.CONTROL_PLANE_API_TOKEN;
-    if (token && req.headers.get("x-cmd-signature") === token) return;
+    const token = process.env.CONTROL_PLANE_API_TOKEN ?? "";
+    if (!isPlaceholderToken(token) && req.headers.get("x-cmd-signature") === token) return;
   }
 
   const { userId, redirectToSignIn } = await auth();

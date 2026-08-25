@@ -60,7 +60,8 @@ export function TopicsStudio() {
         const res = await fetch("/api/generate", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ type: "carousel", brandSurface: "default", prompt: topics[i], count: slides }),
+          // One carousel per topic; `slides` is SLIDES per carousel, not item count.
+          body: JSON.stringify({ type: "carousel", brandSurface: "default", prompt: topics[i], slideCount: slides }),
         });
         const d = await res.json().catch(() => ({}) as Record<string, unknown>);
         if (!res.ok) throw new Error((d as { error?: string }).error ?? `failed (${res.status})`);

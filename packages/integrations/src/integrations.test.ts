@@ -215,6 +215,62 @@ describe("PostizClient.schedulePost", () => {
   });
 });
 
+describe("PostizClient.getPostMetrics", () => {
+  it("returns normalized metrics with no error on success", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse({ statistics: { impressions: 1200, likes: 34, note: "ignored" } }),
+    );
+    const client = new PostizClient({ baseUrl: "https://p/api", apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+
+    const result = await client.getPostMetrics("post_1");
+
+    expect(result).toEqual({ metrics: { impressions: 1200, likes: 34 } });
+    expect(result.error).toBeUndefined();
+    expect(String(fetchImpl.mock.calls[0]![0])).toBe("https://p/api/public/v1/posts/post_1/statistics");
+  });
+
+  it("reports the failure instead of returning a bare {}", async () => {
+    // The bug this pins: returning {} on any error made a REVOKED API KEY look
+    // exactly like a post with no numbers yet, so the analytics tick reported a
+    // clean run while measuring nothing at all.
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ error: "unauthorized" }, 401));
+    const client = new PostizClient({ baseUrl: "https://p/api", apiKey: "bad", fetchImpl: fetchImpl as unknown as typeof fetch });
+
+    const result = await client.getPostMetrics("post_1");
+
+    expect(result.metrics).toEqual({});
+    expect(result.error).toBeTruthy();
+    expect(result.error).toContain("401");
+  });
+
+  it("reports a network/timeout failure the same way", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error("The operation was aborted due to timeout"));
+    const client = new PostizClient({ baseUrl: "https://p/api", apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+
+    const result = await client.getPostMetrics("post_1");
+
+    expect(result.metrics).toEqual({});
+    expect(result.error).toContain("timeout");
+  });
+
+  it("bounds the request with an abort signal so a hung Postiz cannot stall the cron", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ likes: 1 }));
+    const client = new PostizClient({ baseUrl: "https://p/api", apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+
+    await client.getPostMetrics("post_1");
+
+    const init = fetchImpl.mock.calls[0]![1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("URL-encodes the post id", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}));
+    const client = new PostizClient({ baseUrl: "https://p/api", apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    await client.getPostMetrics("a/b c");
+    expect(String(fetchImpl.mock.calls[0]![0])).toContain("/posts/a%2Fb%20c/statistics");
+  });
+});
+
 describe("N8nDispatcher", () => {
   it("maps dotted event types to kebab webhook paths", () => {
     const d = new N8nDispatcher({ webhookBaseUrl: "https://flows.example.com/webhook" });

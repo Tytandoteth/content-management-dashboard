@@ -20,6 +20,31 @@ export interface CallLlmOptions {
   fetchImpl?: typeof fetch;
 }
 
+/**
+ * Hard ceiling on one LLM call. Callers sit inside a 60s route budget, so an
+ * un-timed fetch here just hangs until the platform kills the whole request with
+ * no usable error.
+ */
+const LLM_TIMEOUT_MS = 45_000;
+
+function isTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
+async function fetchWithTimeout(
+  fetchImpl: typeof fetch,
+  url: string,
+  init: RequestInit,
+  label: string,
+): Promise<Response> {
+  try {
+    return await fetchImpl(url, { ...init, signal: AbortSignal.timeout(LLM_TIMEOUT_MS) });
+  } catch (err) {
+    if (isTimeout(err)) throw new Error(`${label} timed out after ${LLM_TIMEOUT_MS / 1000}s`);
+    throw err;
+  }
+}
+
 /** One LLM call → raw text. Returns null when no provider key is configured. */
 export async function callLLM(system: string, user: string, options: CallLlmOptions = {}): Promise<string | null> {
   const provider = pickProvider();
@@ -28,20 +53,25 @@ export async function callLLM(system: string, user: string, options: CallLlmOpti
   const maxTokens = options.maxTokens ?? 600;
 
   if (provider === "anthropic") {
-    const res = await fetchImpl("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": env.anthropicApiKey(),
-        "anthropic-version": "2023-06-01",
+    const res = await fetchWithTimeout(
+      fetchImpl,
+      "https://api.anthropic.com/v1/messages",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": env.anthropicApiKey(),
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: env.anthropicModel(),
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: "user", content: user }],
+        }),
       },
-      body: JSON.stringify({
-        model: env.anthropicModel(),
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: "user", content: user }],
-      }),
-    });
+      "LLM Anthropic",
+    );
     if (!res.ok) throw new Error(`LLM Anthropic ${res.status}`);
     const json = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
     // Current Claude models run adaptive thinking by default, so content[0] may
@@ -49,22 +79,27 @@ export async function callLLM(system: string, user: string, options: CallLlmOpti
     return (json.content?.find((b) => b.type === "text")?.text ?? "").trim();
   }
 
-  const res = await fetchImpl(`${env.openrouterBaseUrl().replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${env.openrouterApiKey()}`,
-      "x-title": "content-management-dashboard",
+  const res = await fetchWithTimeout(
+    fetchImpl,
+    `${env.openrouterBaseUrl().replace(/\/$/, "")}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${env.openrouterApiKey()}`,
+        "x-title": "content-management-dashboard",
+      },
+      body: JSON.stringify({
+        model: env.orchestratorModel(),
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
     },
-    body: JSON.stringify({
-      model: env.orchestratorModel(),
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
+    "LLM",
+  );
   if (!res.ok) throw new Error(`LLM ${res.status}`);
   const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
   return (json.choices?.[0]?.message?.content ?? "").trim();

@@ -39,7 +39,10 @@ export async function POST(request: Request) {
     type: "carousel" as never,
     brandSurface: DEFAULT_BRAND_SURFACE as never,
     prompt,
-    count: tools.length + 2,
+    // ONE carousel (count is how many carousels), with a slide per tool plus a
+    // hook and a CTA.
+    count: 1,
+    metadata: { slideCount: tools.length + 2 },
   });
 
   // Mark the tools used; link their ids and set a clean title on each item

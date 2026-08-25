@@ -56,7 +56,8 @@ export function NewCarousel({ onCreated }: { onCreated?: () => void }) {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: "carousel", prompt, count, brandSurface: "default", style }),
+        // `count` is how many carousels to make; this control sets SLIDES per carousel.
+        body: JSON.stringify({ type: "carousel", prompt, slideCount: count, brandSurface: "default", style }),
       });
       const d = await res.json().catch(() => ({}) as Record<string, unknown>);
       if (!res.ok) throw new Error((d as { error?: string }).error ?? `generation failed (${res.status})`);

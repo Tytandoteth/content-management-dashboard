@@ -99,6 +99,18 @@ describe("StubGenerator", () => {
     expect(result.assets[0]!.type).toBe("clip");
     expect(result.assets[0]!.caption).toContain("10 clips");
   });
+
+  it("caps a runaway count so a mis-parsed year is not 2026 rows", async () => {
+    const result = await new StubGenerator().generate({ ...brief, count: 2026 });
+    expect(result.assets).toHaveLength(10);
+  });
+
+  it("floors at one for absent, zero, or nonsense counts", async () => {
+    for (const count of [undefined, 0, -5, NaN]) {
+      const result = await new StubGenerator().generate({ ...brief, count });
+      expect(result.assets).toHaveLength(1);
+    }
+  });
 });
 
 describe("computeSchedule", () => {

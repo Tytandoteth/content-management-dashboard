@@ -14,10 +14,24 @@ export interface AnthropicBlock {
 }
 
 /**
+ * Dropping an out-of-catalog tool call silently made the plan a lie: the model
+ * asked to publish, we quietly refused, and the user saw a plan that never
+ * mentioned it. We surface the dropped names as a plan-level note (the lighter
+ * of the two options — the alternative, synthesizing a failed StepResult per
+ * dropped call, would make an unexecuted preview report failures it never had).
+ * The note is also appended to the summary so every existing consumer shows it.
+ */
+function droppedNote(names: Array<string | undefined>): string | undefined {
+  const dropped = [...new Set(names.filter((n): n is string => typeof n === "string" && !!n))];
+  if (dropped.length === 0) return undefined;
+  return `Ignored ${dropped.length} unsupported tool call${dropped.length > 1 ? "s" : ""} (${dropped.join(", ")}); there is no publish tool by design.`;
+}
+
+/**
  * Turn the content blocks of one Claude assistant turn into an OrchestrationPlan:
  * text blocks become the summary, `tool_use` blocks become steps. Tool calls for
- * names outside our catalog are dropped (the model can't invent actions). Pure,
- * so it's unit-testable without the SDK.
+ * names outside our catalog are dropped (the model can't invent actions) and
+ * reported in `note`. Pure, so it's unit-testable without the SDK.
  */
 export function toolUsesToPlan(
   blocks: AnthropicBlock[],
@@ -29,17 +43,21 @@ export function toolUsesToPlan(
     .join(" ")
     .trim();
 
-  const steps: ToolCall[] = blocks
-    .filter((b) => b.type === "tool_use" && isToolName(b.name))
+  const toolBlocks = blocks.filter((b) => b.type === "tool_use");
+  const steps: ToolCall[] = toolBlocks
+    .filter((b) => isToolName(b.name))
     .map((b) => ({
       tool: b.name as ToolCall["tool"],
       args: b.input ?? {},
     }));
+  const note = droppedNote(toolBlocks.filter((b) => !isToolName(b.name)).map((b) => b.name));
 
+  const base = summary || (steps.length ? "Execute the planned content actions." : "No action needed.");
   return {
-    summary: summary || (steps.length ? "Execute the planned content actions." : "No action needed."),
+    summary: note ? `${base} ${note}` : base,
     steps,
     planner: plannerName,
+    ...(note ? { note } : {}),
   };
 }
 
@@ -59,15 +77,16 @@ export interface OpenAiMessage {
 
 /**
  * Turn an OpenAI/OpenRouter assistant message into an OrchestrationPlan. Pure and
- * SDK-free, so it's unit-testable. Tool calls outside the catalog are dropped;
- * malformed JSON arguments degrade to an empty args object.
+ * SDK-free, so it's unit-testable. Tool calls outside the catalog are dropped and
+ * reported in `note`; malformed JSON arguments degrade to an empty args object.
  */
 export function openAiToolCallsToPlan(
   message: OpenAiMessage,
   plannerName = "openrouter",
 ): OrchestrationPlan {
   const summary = (message.content ?? "").trim();
-  const steps: ToolCall[] = (message.tool_calls ?? [])
+  const calls = message.tool_calls ?? [];
+  const steps: ToolCall[] = calls
     .filter((c) => isToolName(c.function?.name))
     .map((c) => {
       let args: Record<string, unknown> = {};
@@ -78,11 +97,16 @@ export function openAiToolCallsToPlan(
       }
       return { tool: c.function!.name as ToolCall["tool"], args };
     });
+  const note = droppedNote(
+    calls.filter((c) => !isToolName(c.function?.name)).map((c) => c.function?.name),
+  );
 
+  const base = summary || (steps.length ? "Execute the planned content actions." : "No action needed.");
   return {
-    summary: summary || (steps.length ? "Execute the planned content actions." : "No action needed."),
+    summary: note ? `${base} ${note}` : base,
     steps,
     planner: plannerName,
+    ...(note ? { note } : {}),
   };
 }
 

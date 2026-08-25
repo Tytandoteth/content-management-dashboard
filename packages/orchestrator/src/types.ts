@@ -15,6 +15,13 @@ export interface OrchestrationPlan {
   steps: ToolCall[];
   /** Which planner produced this ("claude" | "heuristic"). */
   planner: string;
+  /**
+   * Plan-level caveat surfaced to the user: tool calls that were dropped because
+   * they are outside the catalog, or parts of the request the planner cannot
+   * automate. Also appended to `summary` so existing consumers see it without
+   * needing to read this field.
+   */
+  note?: string;
 }
 
 /** Context the planner can use to ground its decisions. */

@@ -221,8 +221,26 @@ catalog in `packages/orchestrator/src/tools.ts`:
   batch of drafts).
 
 `executePlan` (`apps/control-plane/src/lib/orchestrator/executor.ts`) maps each
-call onto `runGeneration` or `runRecipe`. Every run is logged as an
-`OrchestrationRun` row with the plan and the ids of the items it created.
+call onto `runGeneration` or `runRecipe`, validating the planner's arguments
+first so a model-invented content type or a missing recipe slug fails its own
+step instead of the whole run. Every run is logged as an `OrchestrationRun` row:
+written as `running` before any work starts, then updated with the plan, the
+final status and the ids of the items it created, so a crash or a planner failure
+still leaves a record.
+
+The response is `{ planner, plan, status, created, results, runId? }`, where
+`status` is one of:
+
+| status | meaning |
+| --- | --- |
+| `planned` | preview only (`execute: false`); nothing ran |
+| `empty` | the planner produced no steps |
+| `executed` | every step succeeded |
+| `partial` | some steps succeeded, some failed |
+| `failed` | every step failed, or the run threw |
+
+Validation errors return `400 {error}` and anything else returns `500 {error}`;
+the endpoint never returns a non-JSON body.
 
 **The no-publish guarantee.** The catalog has no publish tool, on purpose. The
 orchestrator can make and queue content but cannot push anything public; a human

@@ -85,6 +85,24 @@ export interface SchedulePostResult {
 export type PostizHealth = "ok" | "degraded" | "down";
 
 /**
+ * Result of a metrics pull. `error` is set when the call itself failed (auth
+ * rejected, instance down, timeout) — which is NOT the same thing as "this post
+ * has no numbers yet", and the caller has to be able to tell them apart. The old
+ * signature returned `{}` for both, so a Postiz API key that had been revoked
+ * looked exactly like a quiet post and the analytics tick reported success while
+ * measuring nothing.
+ */
+export interface PostMetricsResult {
+  /** Normalized key→number map. Empty when the post has no stats (or on error). */
+  metrics: Record<string, number>;
+  /** Present only when the request failed; the message is safe to log. */
+  error?: string;
+}
+
+/** Metrics pulls hang the whole cron if Postiz stops answering. */
+const METRICS_TIMEOUT_MS = 15_000;
+
+/**
  * Required per-provider setting defaults for non-draft posts (each provider's
  * DTO validates its own fields). Extend as more channels come online.
  */
@@ -332,16 +350,21 @@ export class PostizClient {
    * published → measured loop). Returns a flat key→value map (impressions,
    * likes, reposts, clicks, …). The exact Postiz analytics shape varies by
    * version, so this normalizes a few common shapes and is the single place to
-   * adjust if your instance differs. Returns {} when nothing is available.
+   * adjust if your instance differs.
+   *
+   * A failed request returns `{ metrics: {}, error }` rather than a bare `{}` so
+   * callers can distinguish "Postiz refused us" from "this post has no numbers".
    */
-  async getPostMetrics(postizPostId: string): Promise<Record<string, number>> {
+  async getPostMetrics(postizPostId: string): Promise<PostMetricsResult> {
     let raw: unknown;
     try {
-      raw = await this.request(`/public/v1/posts/${encodeURIComponent(postizPostId)}/statistics`);
-    } catch {
-      return {};
+      raw = await this.request(`/public/v1/posts/${encodeURIComponent(postizPostId)}/statistics`, {
+        signal: AbortSignal.timeout(METRICS_TIMEOUT_MS),
+      });
+    } catch (err) {
+      return { metrics: {}, error: err instanceof Error ? err.message : String(err) };
     }
-    return normalizeMetrics(raw);
+    return { metrics: normalizeMetrics(raw) };
   }
 
   /**

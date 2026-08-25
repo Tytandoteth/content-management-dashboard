@@ -50,4 +50,21 @@ describe("OpenRouterPlanner", () => {
     const planner = new OpenRouterPlanner({ apiKey: "k", model: "m", fetchImpl: fetchImpl as unknown as typeof fetch });
     await expect(planner.plan("x", { recipeSlugs: [] })).rejects.toThrow(/OpenRouter 401/);
   });
+
+  it("sends an abort signal so a hung provider cannot eat the request budget", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ choices: [{ message: { content: "ok" } }] }));
+    const planner = new OpenRouterPlanner({ apiKey: "k", model: "m", fetchImpl: fetchImpl as unknown as typeof fetch });
+    await planner.plan("x", { recipeSlugs: [] });
+    const init = fetchImpl.mock.calls[0]![1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("reports a timeout as a timeout, not as an opaque abort", async () => {
+    const timeout = Object.assign(new Error("The operation was aborted due to timeout"), {
+      name: "TimeoutError",
+    });
+    const fetchImpl = vi.fn().mockRejectedValue(timeout);
+    const planner = new OpenRouterPlanner({ apiKey: "k", model: "m", fetchImpl: fetchImpl as unknown as typeof fetch });
+    await expect(planner.plan("x", { recipeSlugs: [] })).rejects.toThrow("planner timed out after 25s");
+  });
 });

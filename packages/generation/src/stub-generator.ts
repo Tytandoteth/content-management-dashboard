@@ -11,6 +11,10 @@ import type {
  * generation → approval → publish pipeline can be exercised before the real
  * OSS clipper / Higgsfield endpoints are wired up.
  */
+/** Upper bound on assets one brief can produce. A bad count (a year scraped out
+ *  of a request, an LLM hallucinating 5000) must not turn into 5000 DB rows. */
+export const MAX_STUB_ASSETS = 10;
+
 export class StubGenerator implements Generator {
   readonly name = "stub";
   readonly engine = "stub";
@@ -23,7 +27,8 @@ export class StubGenerator implements Generator {
   }
 
   async generate(brief: GenerationBrief): Promise<GenerationResult> {
-    const count = Math.max(1, brief.count ?? 1);
+    const requested = Number.isFinite(brief.count) ? Math.round(brief.count as number) : 1;
+    const count = Math.max(1, Math.min(MAX_STUB_ASSETS, requested));
     const assets = Array.from({ length: count }, (_, i) => ({
       url: `stub://${brief.type}/${i + 1}`,
       type: brief.type,

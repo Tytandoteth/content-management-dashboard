@@ -43,19 +43,23 @@ async function main() {
     "plan honors the podcast→clips intent",
     pTool === "run_recipe" || preview.json?.plan?.steps?.[0]?.args?.count === 8,
   );
-  check("preview did NOT execute", preview.json?.executed === false && preview.json?.createdItemIds.length === 0);
+  check("preview did NOT execute", preview.json?.status === "planned" && preview.json?.created === 0);
 
   console.log("\nExecute the plan:");
   const run = await api("POST", "/api/orchestrate", {
     request: "Turn last week's podcast into 8 clips and queue them",
   });
   check("status executed", run.json?.status === "executed");
-  check("created drafts", (run.json?.createdItemIds?.length ?? 0) >= 1);
+  check("created drafts", (run.json?.created ?? 0) >= 1);
 
   console.log("\nHuman-in-the-loop: generated content is draft, not published:");
-  const firstId = run.json?.createdItemIds?.[0];
+  // The response reports HOW MANY it made, not the ids — find the newest draft
+  // the engine created (the list is newest-first).
   const list = await api("GET", "/api/content?status=draft");
-  const found = (list.json?.items ?? []).find((i) => i.id === firstId);
+  const found = (list.json?.items ?? []).find(
+    (i) => i.createdBy === "orchestrator" || String(i.createdBy ?? "").startsWith("recipe:"),
+  );
+  const firstId = found?.id;
   check("orchestrator item is a draft", found?.status === "draft");
   check(
     "created by the engine (orchestrator or recipe)",
@@ -71,7 +75,7 @@ async function main() {
     request: "Run the podcast-to-clips recipe on https://ex.com/ep.mp4",
   });
   check("routed to run_recipe", recipe.json?.plan?.steps?.[0]?.tool === "run_recipe");
-  check("recipe produced 10 drafts", recipe.json?.createdItemIds?.length === 10);
+  check("recipe produced 10 drafts", recipe.json?.created === 10);
 
   console.log(`\n${failures === 0 ? "PASS" : `FAIL (${failures} check(s))`}`);
   process.exit(failures === 0 ? 0 : 1);
