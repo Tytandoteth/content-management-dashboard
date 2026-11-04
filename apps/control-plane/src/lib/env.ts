@@ -60,6 +60,13 @@ export const env = {
   // When a Vercel Blob token is present, store rendered slides there (serverless
   // hosts can't persist/serve files written to disk at runtime).
   blobConfigured: () => !!process.env.BLOB_READ_WRITE_TOKEN,
+  // The one host our Blob store serves public files from. The store id is the
+  // token's fourth "_" field (vercel_blob_rw_<storeId>_<secret>), read the same
+  // way @vercel/blob reads it. Hostnames are lowercase; the id in a token isn't.
+  blobStoreHost: () => {
+    const storeId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
+    return storeId ? `${storeId.toLowerCase()}.public.blob.vercel-storage.com` : null;
+  },
   // Where approved carousels are exported as ready-to-post bundles (Phase 4).
   carouselStagingDir: () => process.env.CAROUSEL_STAGING_DIR ?? "",
   // Default number of slides the composer aims for when count is unspecified.

@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import {
   LocalFsStorage,
@@ -10,6 +9,7 @@ import {
 } from "@cmd/carousel-render";
 import { VercelBlobStorage } from "./blob-storage.js";
 import { env } from "../env.js";
+import { blobAssetUrl, localAssetPath } from "./asset-urls.js";
 import { carouselPublicDir } from "./paths.js";
 
 // Re-exported for any existing callers — the definition itself lives in
@@ -41,19 +41,22 @@ export async function renderAndStore(
  * absolute Vercel Blob URL (serverless — the filesystem isn't writable there,
  * so slides never land on disk). Callers that turn slides back into files
  * (staging export, the .zip download) go through this instead of assuming disk.
+ * Anything outside the carousel dir or our Blob store reads as missing, and a
+ * redirect is an error, so a Blob URL can't bounce the fetch somewhere internal.
  */
 export async function readSlideAsset(url: string): Promise<Buffer | null> {
-  const local = url.match(/^\/carousels\/(.+)$/);
+  const local = localAssetPath(url);
   if (local) {
     try {
-      return await readFile(join(carouselPublicDir(), local[1]!));
+      return await readFile(local);
     } catch {
       return null;
     }
   }
-  if (/^https?:\/\//.test(url)) {
+  const remote = blobAssetUrl(url);
+  if (remote) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(remote, { redirect: "error" });
       if (!res.ok) return null;
       return Buffer.from(await res.arrayBuffer());
     } catch {
