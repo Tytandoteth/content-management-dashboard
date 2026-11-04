@@ -62,6 +62,13 @@ Deck JSON schema (`CarouselSpec` plus `style` and `format`, with a per-slide
 }
 ```
 
+Image fields (`bgImageUrl`, `card.avatarUrl`) take an inline
+`data:image/` URI or a public `https://` URL on the default port. Anything else,
+including a redirect to it or a response that isn't a PNG, JPEG, WebP or GIF, is
+skipped with a warning and the slide renders without that image.
+`POST /api/render/carousel` is stricter: inline images and this studio's own
+storage only, plus GitHub avatars on a repo card, and a 400 for anything else.
+
 `repo: "owner/name"` is expanded into a live GitHub card via
 `apps/control-plane/src/lib/github-card.ts` (`fetchRepoCard`): Contributors,
 Issues, Stars, Forks, avatar, and the language color bar. Set `GITHUB_TOKEN` to

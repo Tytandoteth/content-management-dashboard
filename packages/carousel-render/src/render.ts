@@ -3,6 +3,7 @@ import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 import { CAROUSEL_FORMATS, logoUrlForTool, logoDomainFor } from "@cmd/brand";
 import { loadBrandFonts } from "./fonts.js";
+import { fetchAsDataUri } from "./remote-image.js";
 import { slideElement } from "./registry.js";
 import type { SlideContext } from "./templates.js";
 import type { CarouselSpec, RenderOptions, RenderedSlide } from "./types.js";
@@ -12,27 +13,6 @@ import type { CarouselSpec, RenderOptions, RenderedSlide } from "./types.js";
  * background URLs in, PNG bytes out. The composer/control-plane decides where
  * the bytes are stored (see StorageProvider).
  */
-
-function guessMime(url: string): string {
-  const u = url.split("?")[0]!.toLowerCase();
-  if (u.endsWith(".png")) return "image/png";
-  if (u.endsWith(".webp")) return "image/webp";
-  return "image/jpeg";
-}
-
-async function fetchAsDataUri(url: string): Promise<string | undefined> {
-  // Already a data URI? Use as-is.
-  if (url.startsWith("data:")) return url;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return undefined;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const mime = res.headers.get("content-type") ?? guessMime(url);
-    return `data:${mime};base64,${buf.toString("base64")}`;
-  } catch {
-    return undefined;
-  }
-}
 
 export async function renderCarousel(
   spec: CarouselSpec,

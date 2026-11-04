@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import sharp from "sharp";
 import { renderCarousel } from "./render.js";
 import type { CarouselSpec, CarouselStyle } from "./types.js";
@@ -90,4 +92,49 @@ describe("renderCarousel", () => {
       }, 30000);
     }
   }
+});
+
+describe("renderCarousel image references", () => {
+  let server: Server | undefined;
+  afterEach(() => server?.close());
+
+  /** A host on this machine, standing in for anything internal. Counts who reaches it. */
+  async function internalHost(handler: (url: string) => { status: number; location?: string } = () => ({ status: 200 })) {
+    const hits: string[] = [];
+    server = createServer((req, res) => {
+      hits.push(req.url ?? "");
+      const { status, location } = handler(req.url ?? "");
+      res.writeHead(status, location ? { location } : { "content-type": "image/png" });
+      res.end();
+    });
+    await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
+    return { base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, hits };
+  }
+
+  it("never connects to an internal host from any image field, and still renders", async () => {
+    const { base, hits } = await internalHost();
+    const slides = await renderCarousel({
+      caption: "",
+      hashtags: [],
+      slides: [
+        { role: "hook", headline: "Plate", bgImageUrl: `${base}/bg` },
+        { role: "body", headline: "Card", card: { kind: "repo", title: "a/b", avatarUrl: `${base}/avatar` } },
+      ],
+    }, { style: "gradient-pop" });
+    expect(hits).toEqual([]);
+    expect(slides).toHaveLength(2);
+    for (const s of slides) expect(Array.from(s.data.slice(0, 3))).toEqual([0xff, 0xd8, 0xff]);
+  }, 30000);
+
+  it("renders an inline image plate", async () => {
+    const plate = await sharp({ create: { width: 64, height: 64, channels: 3, background: "#d00000" } }).png().toBuffer();
+    const spec = (bgImageUrl?: string): CarouselSpec => ({
+      caption: "",
+      hashtags: [],
+      slides: [{ role: "hook", headline: "Plate", ...(bgImageUrl ? { bgImageUrl } : {}) }],
+    });
+    const [withPlate] = await renderCarousel(spec(`data:image/png;base64,${plate.toString("base64")}`));
+    const [without] = await renderCarousel(spec());
+    expect(Buffer.from(withPlate!.data).equals(Buffer.from(without!.data))).toBe(false);
+  }, 30000);
 });
