@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CONTENT_TYPES, BRAND_SURFACES } from "@cmd/contracts";
 import { prisma } from "@cmd/db";
 import { createContent } from "@/lib/content-service";
+import { isStorableAssetUrl } from "@/lib/carousel/asset-urls";
 
 export const dynamic = "force-dynamic";
 
@@ -59,12 +60,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const assetUrls = body.assetUrls ?? undefined;
+  if (assetUrls !== undefined && !(Array.isArray(assetUrls) && assetUrls.every(isStorableAssetUrl))) {
+    return NextResponse.json(
+      { error: "assetUrls must be /carousels/ paths or URLs in this studio's Blob store" },
+      { status: 400 },
+    );
+  }
+
   const item = await createContent({
     type: type as never,
     brandSurface: body.brandSurface as never,
     title,
     payload: (body.payload as never) ?? undefined,
-    assetUrls: Array.isArray(body.assetUrls) ? (body.assetUrls as string[]) : undefined,
+    assetUrls: assetUrls as string[] | undefined,
     createdBy: String(createdBy),
     status: body.status === "idea" ? "idea" : "draft",
   });
