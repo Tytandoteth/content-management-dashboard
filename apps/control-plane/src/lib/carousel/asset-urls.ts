@@ -25,7 +25,10 @@ export function localAssetPath(url: string): string | null {
  */
 export function blobAssetUrl(url: string): string | null {
   const host = env.blobStoreHost();
-  if (!host) return null;
+  return host ? urlOnHost(url, host) : null;
+}
+
+function urlOnHost(url: string, host: string): string | null {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -46,4 +49,30 @@ export function isStorableAssetUrl(url: unknown): url is string {
   if (typeof url !== "string" || url.length > 2048) return false;
   if (url.startsWith("/")) return /^\/carousels\/[\w./-]+$/.test(url) && localAssetPath(url) !== null;
   return blobAssetUrl(url) !== null;
+}
+
+/** Where fetchRepoCard's avatars live, so a spec with a live repo card still renders. */
+const AVATAR_HOST = "avatars.githubusercontent.com";
+
+/**
+ * The first image reference in a caller-supplied spec that we won't load, as its
+ * path in the spec, or null if they are all fine. Narrower than the renderer's own
+ * guard, which has to let our scripts' decks through: a caller gets inline images
+ * and what isStorableAssetUrl allows, plus GitHub avatars on a repo card.
+ */
+export function refusedSpecImage(spec: { slides: unknown[] }): string | null {
+  const inlineOrStored = (url: unknown) =>
+    typeof url === "string" && (/^data:image\//i.test(url) || isStorableAssetUrl(url));
+  for (const [i, slide] of spec.slides.entries()) {
+    const { bgImageUrl, card } = (slide ?? {}) as {
+      bgImageUrl?: unknown;
+      card?: { avatarUrl?: unknown } | null;
+    };
+    if (bgImageUrl != null && !inlineOrStored(bgImageUrl)) return `slides[${i}].bgImageUrl`;
+    const avatar = card?.avatarUrl;
+    if (avatar != null && !inlineOrStored(avatar) && !(typeof avatar === "string" && urlOnHost(avatar, AVATAR_HOST))) {
+      return `slides[${i}].card.avatarUrl`;
+    }
+  }
+  return null;
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import type { CarouselSpec } from "@cmd/carousel-render";
 import { composeSpec } from "@/lib/carousel/compose";
+import { refusedSpecImage } from "@/lib/carousel/asset-urls";
 import { renderAndStore } from "@/lib/carousel/store";
 
 // Native render libs (resvg/satori) require the Node runtime, not edge.
@@ -26,6 +27,13 @@ export async function POST(request: Request) {
   let spec: CarouselSpec;
   const rawSpec = body.spec as CarouselSpec | undefined;
   if (rawSpec && Array.isArray(rawSpec.slides) && rawSpec.slides.length > 0) {
+    const refused = refusedSpecImage(rawSpec);
+    if (refused) {
+      return NextResponse.json(
+        { error: `${refused} must be an inline image or a file in this studio's storage` },
+        { status: 400 },
+      );
+    }
     spec = rawSpec;
   } else if (typeof body.topic === "string" && body.topic.trim()) {
     spec = await composeSpec(body.topic, {

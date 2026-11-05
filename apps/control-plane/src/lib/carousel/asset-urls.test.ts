@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { blobAssetUrl, isStorableAssetUrl, localAssetPath } from "./asset-urls.js";
+import { blobAssetUrl, isStorableAssetUrl, localAssetPath, refusedSpecImage } from "./asset-urls.js";
 import { readSlideAsset } from "./store.js";
 
 const HOST = "abc123def.public.blob.vercel-storage.com";
@@ -147,5 +147,42 @@ describe("slide asset containment", () => {
     ])("refuses the malformed value %j", (url) => {
       expect(isStorableAssetUrl(url)).toBe(false);
     });
+  });
+});
+
+describe("refusedSpecImage", () => {
+  beforeEach(() => vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_ABC123def_notarealsecret"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  const inline = "data:image/png;base64,AAAA";
+  const avatar = "https://avatars.githubusercontent.com/u/1?v=4&s=200";
+
+  it("accepts a spec with no images", () => {
+    expect(refusedSpecImage({ slides: [{ role: "hook", headline: "x" }, null, "junk"] })).toBeNull();
+  });
+
+  it.each([
+    [{ bgImageUrl: SLIDE }],
+    [{ bgImageUrl: inline }],
+    [{ card: { avatarUrl: avatar } }],
+    [{ card: { avatarUrl: inline } }],
+    [{ card: {} }],
+  ])("accepts %j", (slide) => {
+    expect(refusedSpecImage({ slides: [slide] })).toBeNull();
+  });
+
+  it.each(INTERNAL_URLS)("refuses %s in every image field", (url) => {
+    expect(refusedSpecImage({ slides: [{ bgImageUrl: url }] })).toBe("slides[0].bgImageUrl");
+    expect(refusedSpecImage({ slides: [{}, { card: { avatarUrl: url } }] })).toBe("slides[1].card.avatarUrl");
+  });
+
+  it.each([
+    [{ bgImageUrl: avatar }, "slides[0].bgImageUrl"],
+    [{ card: { avatarUrl: "https://avatars.githubusercontent.com.evil.example/u/1" } }, "slides[0].card.avatarUrl"],
+    [{ bgImageUrl: "data:text/html,x" }, "slides[0].bgImageUrl"],
+    [{ bgImageUrl: ["http://127.0.0.1/"] }, "slides[0].bgImageUrl"],
+    [{ bgImageUrl: 1 }, "slides[0].bgImageUrl"],
+  ])("refuses %j", (slide, path) => {
+    expect(refusedSpecImage({ slides: [slide] })).toBe(path);
   });
 });
