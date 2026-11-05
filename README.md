@@ -16,6 +16,10 @@
 
 </div>
 
+> **Security update, November 2026:** if you self-host this dashboard, rebuild from
+> current `main`. Builds from `v0.1.0` or earlier `main` are affected, and you may
+> need to rotate secrets. See the [security advisory](https://github.com/Tytandoteth/content-management-dashboard/security/advisories/GHSA-c5xm-cgf8-vcgc).
+
 Content Management Dashboard is an open-source content management dashboard and AI
 carousel generator for TikTok and Instagram. It is a self-hosted social media
 content pipeline where Claude AI composes the slide copy in your brand voice,
